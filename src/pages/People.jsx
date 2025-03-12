@@ -1,0 +1,286 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
+import clsx from "clsx";
+
+const tabs = [
+  { id: "list", label: "List by Role", active: true },
+  { id: "search", label: "Search" },
+];
+
+const mockPeople = [
+  {
+    name: "Akbar, Mubarik",
+    role: "4sov tournament: League Administrator",
+    email: "hehapi1436@evasud.com",
+    dateOfBirth: "",
+    hasLogin: true,
+    lastLoggedIn: "Wed 12 Mar 2025 07:48 PM",
+    verifiedEmail: true,
+  },
+];
+
+export default function People() {
+  const [activeTab, setActiveTab] = useState("list");
+  const [filters, setFilters] = useState({
+    status: "Active",
+    role: "League Administrator",
+    season: "2024-2025",
+    division: "All",
+    team: "All",
+    fromDate: {
+      day: "26",
+      month: "October",
+      year: "2024",
+    },
+    toDate: {
+      day: "10",
+      month: "December",
+      year: "2024",
+    },
+  });
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">People</h1>
+
+      {/* Tabs */}
+      <div className="bg-gray-100 rounded-t-lg border border-gray-200">
+        <div className="flex">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={clsx(
+                "px-6 py-3 text-sm font-medium rounded-t-lg",
+                activeTab === tab.id
+                  ? "bg-white border-t-2 border-red-500"
+                  : "text-gray-600 hover:text-gray-800"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white border-x border-b border-gray-200 rounded-b-lg p-6">
+        {/* Role Types Link */}
+        <div className="mb-6">
+          <Link to="/role-types" className="text-blue-600 hover:underline">
+            To review and select role types specific to your league click here
+          </Link>
+        </div>
+
+        {/* Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Status</label>
+            <select
+              value={filters.status}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, status: e.target.value }))
+              }
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option>Active</option>
+              <option>Inactive</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">
+              Role
+              <span className="text-gray-500 text-xs ml-2">
+                After changing wait for screen to refresh
+              </span>
+            </label>
+            <select
+              value={filters.role}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, role: e.target.value }))
+              }
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option>League Administrator</option>
+              <option>Team Manager</option>
+              <option>Player</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Season</label>
+            <select
+              value={filters.season}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, season: e.target.value }))
+              }
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option>2024-2025</option>
+              <option>2023-2024</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Division</label>
+            <select
+              value={filters.division}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, division: e.target.value }))
+              }
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option>All</option>
+              <option>Division 1</option>
+              <option>Division 2</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Team</label>
+            <select
+              value={filters.team}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, team: e.target.value }))
+              }
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option>All</option>
+              <option>Team A</option>
+              <option>Team B</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Date Range */}
+        <div className="flex flex-wrap gap-6 mb-6">
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">From</label>
+            <div className="flex gap-2">
+              <select className="border border-gray-300 rounded-md px-2 py-2">
+                <option>26</option>
+              </select>
+              <select className="border border-gray-300 rounded-md px-2 py-2">
+                <option>October</option>
+              </select>
+              <select className="border border-gray-300 rounded-md px-2 py-2">
+                <option>2024</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">To</label>
+            <div className="flex gap-2">
+              <select className="border border-gray-300 rounded-md px-2 py-2">
+                <option>10</option>
+              </select>
+              <select className="border border-gray-300 rounded-md px-2 py-2">
+                <option>December</option>
+              </select>
+              <select className="border border-gray-300 rounded-md px-2 py-2">
+                <option>2024</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-end">
+            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              <RefreshCw size={16} />
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-500 mb-6">
+          Changing these dates overrides the season start and end dates
+        </p>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 mb-6">
+          <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+            Create new
+          </button>
+          <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+            Back
+          </button>
+        </div>
+
+        {/* People Table */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Role
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Email Address
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Date Of Birth
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Has Login?
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Verified Email?
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {mockPeople.map((person, index) => (
+                <tr key={index}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {person.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {person.role}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {person.email}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {person.dateOfBirth}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {person.hasLogin && (
+                      <div>
+                        <span className="text-green-600">✓ Yes</span>
+                        <div className="text-xs text-gray-500">
+                          Last logged in: {person.lastLoggedIn}
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {person.verifiedEmail && (
+                      <span className="text-green-600">✓ Yes</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
+                        Edit
+                      </button>
+                      <button className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
