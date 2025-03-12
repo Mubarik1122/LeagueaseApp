@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import AdminHome from "./pages/AdminHome";
 import Setup from "./pages/Setup";
+import Competitions from "./pages/Competitions";
 import People from "./pages/People";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Routes>
             <Route path="/" element={<AdminHome />} />
             <Route path="/setup" element={<Setup />} />
+            <Route path="/setup/competitions" element={<Competitions />} />
             <Route path="/people" element={<People />} />
             {/* Other routes will be added as needed */}
           </Routes>
