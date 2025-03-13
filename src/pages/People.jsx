@@ -1,43 +1,43 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { RefreshCw } from "lucide-react";
-import clsx from "clsx";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { RefreshCw } from 'lucide-react';
+import clsx from 'clsx';
 
 const tabs = [
-  { id: "list", label: "List by Role", active: true },
-  { id: "search", label: "Search" },
+  { id: 'list', label: 'List by Role', active: true },
+  { id: 'search', label: 'Search' }
 ];
 
 const mockPeople = [
   {
-    name: "Akbar, Mubarik",
-    role: "4sov tournament: League Administrator",
-    email: "hehapi1436@evasud.com",
-    dateOfBirth: "",
+    name: 'Akbar, Mubarik',
+    role: '4sov tournament: League Administrator',
+    email: 'hehapi1436@evasud.com',
+    dateOfBirth: '',
     hasLogin: true,
-    lastLoggedIn: "Wed 12 Mar 2025 07:48 PM",
-    verifiedEmail: true,
-  },
+    lastLoggedIn: 'Wed 12 Mar 2025 07:48 PM',
+    verifiedEmail: true
+  }
 ];
 
 export default function People() {
-  const [activeTab, setActiveTab] = useState("list");
+  const [activeTab, setActiveTab] = useState('list');
   const [filters, setFilters] = useState({
-    status: "Active",
-    role: "League Administrator",
-    season: "2024-2025",
-    division: "All",
-    team: "All",
+    status: 'Active',
+    role: 'League Administrator',
+    season: '2024-2025',
+    division: 'All',
+    team: 'All',
     fromDate: {
-      day: "26",
-      month: "October",
-      year: "2024",
+      day: '26',
+      month: 'October',
+      year: '2024'
     },
     toDate: {
-      day: "10",
-      month: "December",
-      year: "2024",
-    },
+      day: '10',
+      month: 'December',
+      year: '2024'
+    }
   });
 
   return (
@@ -47,15 +47,15 @@ export default function People() {
       {/* Tabs */}
       <div className="bg-gray-100 rounded-t-lg border border-gray-200">
         <div className="flex">
-          {tabs.map((tab) => (
+          {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={clsx(
-                "px-6 py-3 text-sm font-medium rounded-t-lg",
+                'px-6 py-3 text-sm font-medium rounded-t-lg',
                 activeTab === tab.id
-                  ? "bg-white border-t-2 border-red-500"
-                  : "text-gray-600 hover:text-gray-800"
+                  ? 'bg-white border-t-2 border-red-500'
+                  : 'text-gray-600 hover:text-gray-800'
               )}
             >
               {tab.label}
@@ -76,11 +76,9 @@ export default function People() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           <div>
             <label className="block text-sm text-gray-700 mb-1">Status</label>
-            <select
+            <select 
               value={filters.status}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, status: e.target.value }))
-              }
+              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option>Active</option>
@@ -91,15 +89,11 @@ export default function People() {
           <div>
             <label className="block text-sm text-gray-700 mb-1">
               Role
-              <span className="text-gray-500 text-xs ml-2">
-                After changing wait for screen to refresh
-              </span>
+              <span className="text-gray-500 text-xs ml-2">After changing wait for screen to refresh</span>
             </label>
-            <select
+            <select 
               value={filters.role}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, role: e.target.value }))
-              }
+              onChange={(e) => setFilters(prev => ({ ...prev, role: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option>League Administrator</option>
@@ -110,11 +104,9 @@ export default function People() {
 
           <div>
             <label className="block text-sm text-gray-700 mb-1">Season</label>
-            <select
+            <select 
               value={filters.season}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, season: e.target.value }))
-              }
+              onChange={(e) => setFilters(prev => ({ ...prev, season: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option>2024-2025</option>
@@ -124,11 +116,9 @@ export default function People() {
 
           <div>
             <label className="block text-sm text-gray-700 mb-1">Division</label>
-            <select
+            <select 
               value={filters.division}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, division: e.target.value }))
-              }
+              onChange={(e) => setFilters(prev => ({ ...prev, division: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option>All</option>
@@ -139,11 +129,9 @@ export default function People() {
 
           <div>
             <label className="block text-sm text-gray-700 mb-1">Team</label>
-            <select
+            <select 
               value={filters.team}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, team: e.target.value }))
-              }
+              onChange={(e) => setFilters(prev => ({ ...prev, team: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option>All</option>
@@ -212,58 +200,32 @@ export default function People() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Email Address
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Date Of Birth
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Has Login?
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Verified Email?
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email Address</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Of Birth</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Has Login?</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verified Email?</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {mockPeople.map((person, index) => (
                 <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {person.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {person.role}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {person.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {person.dateOfBirth}
-                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{person.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{person.role}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{person.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{person.dateOfBirth}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {person.hasLogin && (
                       <div>
                         <span className="text-green-600">✓ Yes</span>
-                        <div className="text-xs text-gray-500">
-                          Last logged in: {person.lastLoggedIn}
-                        </div>
+                        <div className="text-xs text-gray-500">Last logged in: {person.lastLoggedIn}</div>
                       </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {person.verifiedEmail && (
-                      <span className="text-green-600">✓ Yes</span>
-                    )}
+                    {person.verifiedEmail && <span className="text-green-600">✓ Yes</span>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex gap-2">
