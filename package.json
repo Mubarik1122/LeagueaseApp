@@ -10,11 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "clsx": "^2.1.0",
     "lucide-react": "^0.344.0",
+    "moment-timezone": "^0.5.47",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.22.3",
-    "clsx": "^2.1.0"
+    "react-select": "^5.10.1",
+    "sweetalert2": "^11.17.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
