@@ -1,33 +1,33 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Trophy } from 'lucide-react';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Trophy } from "lucide-react";
 
 export default function Login({ onLogin }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-    rememberMe: false
+    username: "",
+    password: "",
+    rememberMe: false,
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.username === 'admin' && formData.password === 'admin') {
+    if (formData.username === "admin" && formData.password === "admin") {
       onLogin();
-      navigate('/');
+      navigate("/");
     } else {
-      setError('Invalid username or password');
+      setError("Invalid username or password");
     }
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
-    if (error) setError('');
+    if (error) setError("");
   };
 
   return (
@@ -36,9 +36,11 @@ export default function Login({ onLogin }) {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <Trophy className="text-red-600" size={48} />
+              <Trophy className="text-[#00ADE5]" size={48} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Log into 'My Account'</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Log into 'My Account'
+            </h2>
           </div>
 
           <div className="bg-white py-8 px-4 shadow-sm rounded-lg sm:px-10">
@@ -63,9 +65,12 @@ export default function Login({ onLogin }) {
                   {error}
                 </div>
               )}
-              
+
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Username
                 </label>
                 <input
@@ -75,12 +80,15 @@ export default function Login({ onLogin }) {
                   required
                   value={formData.username}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Password
                 </label>
                 <input
@@ -90,7 +98,7 @@ export default function Login({ onLogin }) {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
                 />
               </div>
 
@@ -102,9 +110,12 @@ export default function Login({ onLogin }) {
                     type="checkbox"
                     checked={formData.rememberMe}
                     onChange={handleChange}
-                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  <label
+                    htmlFor="remember-me"
+                    className="ml-2 block text-sm text-gray-900"
+                  >
                     Remember Me
                   </label>
                 </div>
@@ -113,7 +124,7 @@ export default function Login({ onLogin }) {
               <div>
                 <button
                   type="submit"
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#003366] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
                 >
                   Login
                 </button>
@@ -121,7 +132,10 @@ export default function Login({ onLogin }) {
             </form>
 
             <div className="mt-6">
-              <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-blue-600 hover:underline"
+              >
                 Lost password
               </Link>
             </div>
@@ -131,9 +145,13 @@ export default function Login({ onLogin }) {
 
       <footer className="py-4 text-center text-sm text-gray-600">
         <div className="space-x-2">
-          <Link to="/terms" className="hover:text-gray-900">Terms & Conditions</Link>
+          <Link to="/terms" className="hover:text-gray-900">
+            Terms & Conditions
+          </Link>
           <span>|</span>
-          <Link to="/privacy" className="hover:text-gray-900">Privacy</Link>
+          <Link to="/privacy" className="hover:text-gray-900">
+            Privacy
+          </Link>
           <span>|</span>
           <span>Copyright© 2002-2025 - LeagueRepublic</span>
         </div>

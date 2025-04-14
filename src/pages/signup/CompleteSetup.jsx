@@ -1,55 +1,59 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCircle } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { CheckCircle } from "lucide-react";
 
 export default function CompleteSetup() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    username: '',
-    password: ''
+    firstName: "",
+    lastName: "",
+    username: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    const storedEmail = localStorage.getItem('signupEmail');
+    const storedEmail = localStorage.getItem("signupEmail");
     if (!storedEmail) {
-      navigate('/signup');
+      navigate("/signup");
     }
     setEmail(storedEmail);
-    setFormData(prev => ({ ...prev, username: storedEmail }));
+    setFormData((prev) => ({ ...prev, username: storedEmail }));
   }, [navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Clear signup data
-    localStorage.removeItem('signupEmail');
-    // Navigate to login
-    navigate('/login');
+    // Store user data
+    localStorage.setItem("userData", JSON.stringify(formData));
+    // Navigate to league type selection
+    navigate("/signup/league-type");
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const passwordMeetsCriteria = (password) => {
-    return password.length >= 8 &&
-           /[A-Z]/.test(password) &&
-           /[a-z]/.test(password) &&
-           /\d/.test(password);
+    return (
+      password.length >= 8 &&
+      /[A-Z]/.test(password) &&
+      /[a-z]/.test(password) &&
+      /\d/.test(password)
+    );
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 text-center">Complete account setup</h2>
+          <h2 className="text-2xl font-bold text-gray-900 text-center">
+            Complete account setup
+          </h2>
         </div>
 
         <div className="bg-white p-8 rounded-lg shadow">
@@ -74,7 +78,7 @@ export default function CompleteSetup() {
                   required
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
                 />
               </div>
 
@@ -88,7 +92,7 @@ export default function CompleteSetup() {
                   required
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
                 />
               </div>
             </div>
@@ -103,7 +107,7 @@ export default function CompleteSetup() {
                 required
                 value={formData.username}
                 onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
               />
             </div>
 
@@ -118,14 +122,14 @@ export default function CompleteSetup() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-16 focus:outline-none focus:ring-red-500 focus:border-red-500"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-16 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 px-3 flex items-center text-sm text-gray-600 hover:text-gray-800"
                 >
-                  {showPassword ? 'Hide' : 'Show'}
+                  {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
               <div className="mt-2 text-sm text-gray-600">
@@ -142,7 +146,7 @@ export default function CompleteSetup() {
             <button
               type="submit"
               disabled={!passwordMeetsCriteria(formData.password)}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#003366] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5] disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               Create new account
             </button>
