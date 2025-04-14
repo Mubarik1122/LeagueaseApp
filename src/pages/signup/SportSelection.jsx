@@ -56,7 +56,7 @@ export default function SportSelection() {
     const sport = selectedSport === "Other" ? otherSport : selectedSport;
     localStorage.setItem("selectedSport", sport);
     // Navigate to the next step (you can add the route for the next step)
-    navigate("/setup");
+    navigate("/signup/league-details");
   };
 
   return (

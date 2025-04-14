@@ -42,10 +42,11 @@ export default function Sidebar() {
       >
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <Trophy className="text-[#00ADE5]" size={28} />
-            <h1 className="text-xl font-bold text-gray-800">
-              Tournament Admin
-            </h1>
+            <img
+              src="\image\logo\9.png" // <-- replace with your image path
+              alt="Tournament Logo"
+              className="h-16 object-contain" // same size as size={28}
+            />
           </div>
         </div>
 
