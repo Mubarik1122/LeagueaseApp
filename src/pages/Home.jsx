@@ -135,16 +135,6 @@ export default function Home() {
             What's your sport?
           </button>
         </div>
-        {/* Add the curved shape */}
-        <div className="h-32 bg-[#003366] relative">
-          <div
-            className="absolute bottom-0 left-0 right-0 h-32 bg-white"
-            style={{
-              borderTopLeftRadius: "50% 100%",
-              borderTopRightRadius: "50% 100%",
-            }}
-          ></div>
-        </div>
       </div>
     </div>
   );
