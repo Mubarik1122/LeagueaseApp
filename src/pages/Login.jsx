@@ -1,23 +1,55 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
+import { authAPI } from "../services/api";
 
 export default function Login({ onLogin }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
     rememberMe: false,
   });
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.username === "admin" && formData.password === "admin") {
+    setIsLoading(true);
+    setError("");
+    
+    // Check for hardcoded admin credentials
+    if (formData.email === "admin@gmail.com" && formData.password === "admin") {
+      // Create mock response data for admin user
+      const mockUser = {
+        id: 1,
+        name: "Admin User",
+        email: "admin@gmail.com",
+        role: "admin"
+      };
+      
+      // Set mock token and user data
+      localStorage.setItem('token', 'admin-test-token');
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
+      // Trigger login and navigate
       onLogin();
       navigate("/");
-    } else {
-      setError("Invalid username or password");
+      setIsLoading(false);
+      return;
+    }
+    
+    // Proceed with normal API login if not using admin credentials
+    try {
+      const response = await authAPI.login(formData.email, formData.password);
+      localStorage.setItem('token', response.data.access_token || response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      onLogin();
+      navigate("/");
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -68,17 +100,17 @@ export default function Login({ onLogin }) {
 
               <div>
                 <label
-                  htmlFor="username"
+                  htmlFor="email"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Username
+                  Email
                 </label>
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
+                  id="email"
+                  name="email"
+                  type="email"
                   required
-                  value={formData.username}
+                  value={formData.email}
                   onChange={handleChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
                 />
@@ -124,9 +156,10 @@ export default function Login({ onLogin }) {
               <div>
                 <button
                   type="submit"
+                  disabled={isLoading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#003366] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
                 >
-                  Login
+                  {isLoading ? "Logging in..." : "Login"}
                 </button>
               </div>
             </form>

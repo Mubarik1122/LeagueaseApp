@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import Home from "./pages/Home";
@@ -23,9 +23,52 @@ import ResultSummary from "./pages/results/ResultSummary";
 import StandingsAdjustments from "./pages/results/StandingsAdjustments";
 import StatisticsDownload from "./pages/results/StatisticsDownload";
 import Dashboard from "./pages/Dashboard";
+import { authAPI } from "./services/api";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Check if user is already logged in on app load
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          await authAPI.getUser();
+          setIsAuthenticated(true);
+        } catch (error) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setIsAuthenticated(false);
+    window.location.href = "/login";
+  };
+
+  // Add Protected Route component
+  const ProtectedRoute = ({ children }) => {
+    if (loading) return <div>Loading...</div>;
+    return isAuthenticated ? children : <Navigate to="/login" />;
+  };
 
   if (!isAuthenticated) {
     return (
@@ -34,7 +77,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route
             path="/login"
-            element={<Login onLogin={() => setIsAuthenticated(true)} />}
+            element={<Login onLogin={handleLogin} />}
           />
           <Route path="/signup" element={<AccountSetup />} />
           <Route path="/signup/verify" element={<Verification />} />
