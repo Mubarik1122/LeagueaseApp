@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function Login({ onLogin }) {
   const navigate = useNavigate();
@@ -9,15 +10,30 @@ export default function Login({ onLogin }) {
     password: "",
     rememberMe: false,
   });
-  const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Basic validation
+    if (!formData.username || !formData.password) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Fields",
+        text: "Please enter both username and password.",
+      });
+      return;
+    }
+
+    // Dummy login check
     if (formData.username === "admin" && formData.password === "admin") {
       onLogin();
       navigate("/");
     } else {
-      setError("Invalid username or password");
+      Swal.fire({
+        icon: "error",
+        title: "Login Failed",
+        text: "Invalid username or password",
+      });
     }
   };
 
@@ -27,7 +43,6 @@ export default function Login({ onLogin }) {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-    if (error) setError("");
   };
 
   return (
@@ -60,12 +75,6 @@ export default function Login({ onLogin }) {
             </div>
 
             <form className="space-y-6" onSubmit={handleSubmit}>
-              {error && (
-                <div className="bg-red-50 border-l-4 border-red-400 p-4 text-red-700">
-                  {error}
-                </div>
-              )}
-
               <div>
                 <label
                   htmlFor="username"
@@ -124,7 +133,7 @@ export default function Login({ onLogin }) {
               <div>
                 <button
                   type="submit"
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#003366] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#002244] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
                 >
                   Login
                 </button>
