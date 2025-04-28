@@ -1,14 +1,16 @@
-import { Download, AlertCircle } from 'lucide-react';
+import { Download, AlertCircle } from "lucide-react";
 
 export default function StatisticsDownload() {
   const handleDownload = () => {
     // Implement download logic
-    console.log('Downloading statistics...');
+    console.log("Downloading statistics...");
   };
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Statistics Download</h1>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+        Statistics Download
+      </h1>
 
       <div className="space-y-6">
         {/* Info Message */}
@@ -16,7 +18,8 @@ export default function StatisticsDownload() {
           <div className="flex">
             <AlertCircle className="text-blue-400 mr-2" size={20} />
             <p className="text-sm text-blue-700">
-              Download a spreadsheet containing all statistics entered for the season
+              Download a spreadsheet containing all statistics entered for the
+              season
             </p>
           </div>
         </div>
@@ -24,7 +27,7 @@ export default function StatisticsDownload() {
         {/* Download Button */}
         <button
           onClick={handleDownload}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          className="flex items-center gap-2 px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#003366]"
         >
           <Download size={20} />
           Download the file

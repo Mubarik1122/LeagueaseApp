@@ -1,5 +1,5 @@
 {
-  "name": "LeagueaseApp",
+  "name": "vite-react-typescript-starter",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,14 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.0.1",
+    "@supabase/supabase-js": "^2.39.7",
     "clsx": "^2.1.0",
     "lucide-react": "^0.344.0",
-    "moment-timezone": "^0.5.47",
+    "moment-timezone": "^0.5.48",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hook-form": "^7.56.1",
     "react-router-dom": "^6.22.3",
     "react-select": "^5.10.1",
-    "sweetalert2": "^11.6.13"
+    "sweetalert2": "^11.19.1",
+    "yup": "^1.6.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

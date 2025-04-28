@@ -1,44 +1,52 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { RefreshCw } from 'lucide-react';
-import clsx from 'clsx';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
+import clsx from "clsx";
 
 const scheduleNavItems = [
-  { id: 'manage-matches', label: 'MANAGE MATCHES', path: '/schedule' },
-  { id: 'scheduler-tools', label: 'SCHEDULER TOOLS', path: '/schedule/scheduler-tools' },
-  { id: 'manually-create', label: 'MANUALLY CREATE', path: '/schedule/manually-create' },
-  { id: 'mass-delete', label: 'MASS DELETE', path: '/schedule/mass-delete' },
-  { id: 'conflicts', label: 'CONFLICTS', path: '/schedule/conflicts' },
-  { id: 'download', label: 'DOWNLOAD', path: '/schedule/download' },
+  { id: "manage-matches", label: "MANAGE MATCHES", path: "/schedule" },
+  {
+    id: "scheduler-tools",
+    label: "SCHEDULER TOOLS",
+    path: "/schedule/scheduler-tools",
+  },
+  {
+    id: "manually-create",
+    label: "MANUALLY CREATE",
+    path: "/schedule/manually-create",
+  },
+  { id: "mass-delete", label: "MASS DELETE", path: "/schedule/mass-delete" },
+  { id: "conflicts", label: "CONFLICTS", path: "/schedule/conflicts" },
+  { id: "download", label: "DOWNLOAD", path: "/schedule/download" },
 ];
 
 export default function ManageMatches() {
   const [selectedMatches, setSelectedMatches] = useState(0);
   const [filters, setFilters] = useState({
-    competition: 'All',
-    date: 'All',
-    status: 'All',
-    matchDateStatus: 'All',
-    team: 'All',
+    competition: "All",
+    date: "All",
+    status: "All",
+    matchDateStatus: "All",
+    team: "All",
     showUnplayedOnly: false,
     showHomeMatchesOnly: false,
     showHomeTeamNote: false,
     showRoadTeamNote: false,
-    showGeneralNote: false
+    showGeneralNote: false,
   });
 
   const matches = [
     {
       id: 1,
-      competition: 'Division 2',
-      dateTime: 'Wed 09/04/24 07:00 PM',
-      status: 'Normal',
-      homeTeam: '978 Records',
-      roadTeam: 'Bay State Snipers',
-      note: '',
-      finalScore: '47 - 51',
+      competition: "Division 2",
+      dateTime: "Wed 09/04/24 07:00 PM",
+      status: "Normal",
+      homeTeam: "978 Records",
+      roadTeam: "Bay State Snipers",
+      note: "",
+      finalScore: "47 - 51",
       approved: true,
-      locked: true
+      locked: true,
     },
     // Add more matches as needed
   ];
@@ -51,15 +59,15 @@ export default function ManageMatches() {
       <div className="mb-6 overflow-x-auto">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-4">
-            {scheduleNavItems.map(item => (
+            {scheduleNavItems.map((item) => (
               <Link
                 key={item.id}
                 to={item.path}
                 className={clsx(
-                  'px-3 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap',
+                  "px-3 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap",
                   location.pathname === item.path
-                    ? 'border-red-500 text-red-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? "border-[#00ADE5] text-[#00ADE5]"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 )}
               >
                 {item.label}
@@ -74,11 +82,18 @@ export default function ManageMatches() {
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Competition</label>
-              <select 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Competition
+              </label>
+              <select
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 value={filters.competition}
-                onChange={(e) => setFilters(prev => ({ ...prev, competition: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    competition: e.target.value,
+                  }))
+                }
               >
                 <option>All</option>
                 <option>Division 1</option>
@@ -87,11 +102,15 @@ export default function ManageMatches() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-              <select 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date
+              </label>
+              <select
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 value={filters.date}
-                onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, date: e.target.value }))
+                }
               >
                 <option>All</option>
                 <option>Today</option>
@@ -101,11 +120,15 @@ export default function ManageMatches() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <select
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 value={filters.status}
-                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, status: e.target.value }))
+                }
               >
                 <option>All</option>
                 <option>Normal</option>
@@ -115,11 +138,18 @@ export default function ManageMatches() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Match Date Status</label>
-              <select 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Match Date Status
+              </label>
+              <select
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 value={filters.matchDateStatus}
-                onChange={(e) => setFilters(prev => ({ ...prev, matchDateStatus: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    matchDateStatus: e.target.value,
+                  }))
+                }
               >
                 <option>All</option>
                 <option>Confirmed</option>
@@ -130,12 +160,15 @@ export default function ManageMatches() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Team filter - <span className="text-blue-600">Select multiple teams</span>
+              Team filter -{" "}
+              <span className="text-blue-600">Select multiple teams</span>
             </label>
-            <select 
+            <select
               className="w-full border border-gray-300 rounded-md px-3 py-2"
               value={filters.team}
-              onChange={(e) => setFilters(prev => ({ ...prev, team: e.target.value }))}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, team: e.target.value }))
+              }
             >
               <option>All</option>
               {/* Add team options */}
@@ -149,28 +182,47 @@ export default function ManageMatches() {
                 <input
                   type="checkbox"
                   checked={filters.showUnplayedOnly}
-                  onChange={(e) => setFilters(prev => ({ ...prev, showUnplayedOnly: e.target.checked }))}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      showUnplayedOnly: e.target.checked,
+                    }))
+                  }
+                  className="rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
                 />
-                <span className="text-sm text-gray-600">Show unplayed matches only</span>
+                <span className="text-sm text-gray-600">
+                  Show unplayed matches only
+                </span>
               </label>
 
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={filters.showHomeMatchesOnly}
-                  onChange={(e) => setFilters(prev => ({ ...prev, showHomeMatchesOnly: e.target.checked }))}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      showHomeMatchesOnly: e.target.checked,
+                    }))
+                  }
+                  className="rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
                 />
-                <span className="text-sm text-gray-600">Show home matches for selected teams only</span>
+                <span className="text-sm text-gray-600">
+                  Show home matches for selected teams only
+                </span>
               </label>
 
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={filters.showHomeTeamNote}
-                  onChange={(e) => setFilters(prev => ({ ...prev, showHomeTeamNote: e.target.checked }))}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      showHomeTeamNote: e.target.checked,
+                    }))
+                  }
+                  className="rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
                 />
                 <span className="text-sm text-gray-600">Home team note</span>
               </label>
@@ -179,8 +231,13 @@ export default function ManageMatches() {
                 <input
                   type="checkbox"
                   checked={filters.showRoadTeamNote}
-                  onChange={(e) => setFilters(prev => ({ ...prev, showRoadTeamNote: e.target.checked }))}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      showRoadTeamNote: e.target.checked,
+                    }))
+                  }
+                  className="rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
                 />
                 <span className="text-sm text-gray-600">Road team note</span>
               </label>
@@ -189,8 +246,13 @@ export default function ManageMatches() {
                 <input
                   type="checkbox"
                   checked={filters.showGeneralNote}
-                  onChange={(e) => setFilters(prev => ({ ...prev, showGeneralNote: e.target.checked }))}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      showGeneralNote: e.target.checked,
+                    }))
+                  }
+                  className="rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
                 />
                 <span className="text-sm text-gray-600">General Note</span>
               </label>
@@ -202,14 +264,14 @@ export default function ManageMatches() {
       {/* Actions Bar */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-600">{selectedMatches} selected...</span>
+          <span className="text-sm text-gray-600">
+            {selectedMatches} selected...
+          </span>
           <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
             Actions ▼
           </button>
         </div>
-        <div className="text-sm text-gray-600">
-          163 matches displayed
-        </div>
+        <div className="text-sm text-gray-600">163 matches displayed</div>
       </div>
 
       {/* Matches Table */}
@@ -220,19 +282,39 @@ export default function ManageMatches() {
               <th className="w-12 px-6 py-3">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  className="rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Competition</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date and time</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Home team</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Road team</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Final Score</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Locked</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Competition
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date and time
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Home team
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Road team
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Note
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Final Score
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Approved
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Locked
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -241,16 +323,30 @@ export default function ManageMatches() {
                 <td className="px-6 py-4">
                   <input
                     type="checkbox"
-                    className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                    className="rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
                   />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{match.competition}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{match.dateTime}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{match.status}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{match.homeTeam}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{match.roadTeam}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{match.note}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{match.finalScore}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {match.competition}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {match.dateTime}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {match.status}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {match.homeTeam}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {match.roadTeam}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {match.note}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {match.finalScore}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   {match.approved && <span className="text-green-600">✓</span>}
                 </td>
@@ -259,8 +355,12 @@ export default function ManageMatches() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex space-x-2">
-                    <button className="text-blue-600 hover:text-blue-800">Edit</button>
-                    <button className="text-red-600 hover:text-red-800">Delete</button>
+                    <button className="text-blue-600 hover:text-blue-800">
+                      Edit
+                    </button>
+                    <button className="text-[#00ADE5] hover:text-red-800">
+                      Delete
+                    </button>
                   </div>
                 </td>
               </tr>

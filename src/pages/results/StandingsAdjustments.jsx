@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
 
 export default function StandingsAdjustments() {
-  const [selectedDivision, setSelectedDivision] = useState('Division 1');
+  const [selectedDivision, setSelectedDivision] = useState("Division 1");
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Standings Adjustments</h1>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+        Standings Adjustments
+      </h1>
 
       <div className="space-y-6">
         {/* Info Message */}
@@ -15,7 +17,9 @@ export default function StandingsAdjustments() {
           <div className="flex">
             <AlertCircle className="text-blue-400 mr-2" size={20} />
             <p className="text-sm text-blue-700">
-              Create points adjustments for the standings. Change the score for / against on the standings / Override a team's position on the standings.
+              Create points adjustments for the standings. Change the score for
+              / against on the standings / Override a team's position on the
+              standings.
             </p>
           </div>
         </div>
@@ -34,7 +38,10 @@ export default function StandingsAdjustments() {
 
         {/* Override Link */}
         <div>
-          <Link to="/standings/override" className="text-blue-600 hover:underline">
+          <Link
+            to="/standings/override"
+            className="text-blue-600 hover:underline"
+          >
             Click here to override a team's position in the standings.
           </Link>
         </div>
@@ -48,7 +55,7 @@ export default function StandingsAdjustments() {
 
         {/* Create New Button */}
         <div>
-          <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+          <button className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#003366]">
             Create new
           </button>
         </div>

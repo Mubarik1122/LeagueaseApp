@@ -1,40 +1,20 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
-import Swal from "sweetalert2";
 
-export default function Login({ onLogin }) {
+export default function AccountSetup() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    rememberMe: false,
+    email: "",
+    language: "English (UK)",
+    acceptTerms: false,
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Basic validation
-    if (!formData.username || !formData.password) {
-      Swal.fire({
-        icon: "warning",
-        title: "Missing Fields",
-        text: "Please enter both username and password.",
-      });
-      return;
-    }
-
-    // Dummy login check
-    if (formData.username === "admin" && formData.password === "admin") {
-      onLogin();
-      navigate("/");
-    } else {
-      Swal.fire({
-        icon: "error",
-        title: "Login Failed",
-        text: "Invalid username or password",
-      });
-    }
+    // Store email in localStorage for verification step
+    localStorage.setItem("signupEmail", formData.email);
+    navigate("/signup/verify");
   };
 
   const handleChange = (e) => {
@@ -54,13 +34,13 @@ export default function Login({ onLogin }) {
               <Trophy className="text-[#00ADE5]" size={48} />
             </div>
             <h2 className="text-2xl font-bold text-gray-900">
-              Log into 'My Account'
+              Create a league - Account Setup
             </h2>
           </div>
 
           <div className="bg-white py-8 px-4 shadow-sm rounded-lg sm:px-10">
-            <button className="w-full bg-[#4267B2] text-white py-2 px-4 rounded-md hover:bg-[#365899] mb-6">
-              Click Here to Login Using a Facebook Account
+            <button className="w-full bg-[#4267B2] text-white py-2 px-4 rounded-md hover:bg-[#365899] mb-6 flex items-center justify-center gap-2">
+              <span>Continue with Facebook</span>
             </button>
 
             <div className="relative my-6">
@@ -69,25 +49,25 @@ export default function Login({ onLogin }) {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  Or use your LeagueRepublic account...
+                  or use your email
                 </span>
               </div>
             </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label
-                  htmlFor="username"
+                  htmlFor="email"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Username
+                  Email address *
                 </label>
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
+                  id="email"
+                  name="email"
+                  type="email"
                   required
-                  value={formData.username}
+                  value={formData.email}
                   onChange={handleChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
                 />
@@ -95,59 +75,57 @@ export default function Login({ onLogin }) {
 
               <div>
                 <label
-                  htmlFor="password"
+                  htmlFor="language"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Password
+                  Language *
                 </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={formData.password}
+                <select
+                  id="language"
+                  name="language"
+                  value={formData.language}
                   onChange={handleChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
-                />
+                >
+                  <option>English (UK)</option>
+                  <option>English (US)</option>
+                </select>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="rememberMe"
-                    type="checkbox"
-                    checked={formData.rememberMe}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="remember-me"
-                    className="ml-2 block text-sm text-gray-900"
-                  >
-                    Remember Me
-                  </label>
-                </div>
+              <div className="flex items-center">
+                <input
+                  id="acceptTerms"
+                  name="acceptTerms"
+                  type="checkbox"
+                  required
+                  checked={formData.acceptTerms}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="acceptTerms"
+                  className="ml-2 block text-sm text-gray-900"
+                >
+                  I accept{" "}
+                  <Link to="/terms" className="text-blue-600 hover:underline">
+                    Terms & Conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy" className="text-blue-600 hover:underline">
+                    Privacy
+                  </Link>
+                </label>
               </div>
 
               <div>
                 <button
                   type="submit"
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#002244] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#003366] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
                 >
-                  Login
+                  Get Started
                 </button>
               </div>
             </form>
-
-            <div className="mt-6">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-blue-600 hover:underline"
-              >
-                Lost password
-              </Link>
-            </div>
           </div>
         </div>
       </main>
