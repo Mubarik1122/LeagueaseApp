@@ -264,7 +264,7 @@ export default function People() {
               </div>
 
               <div className="flex items-end">
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-red-700">
                   <RefreshCw size={16} />
                   Refresh
                 </button>
@@ -345,7 +345,7 @@ export default function People() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
-                          <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
+                          <button className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">
                             Edit
                           </button>
                           <button className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">
