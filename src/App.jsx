@@ -7,6 +7,9 @@ import Setup from "./pages/Setup";
 import People from "./pages/People";
 import Competitions from "./pages/Competitions";
 import Login from "./pages/Login";
+import Account from "./pages/Account";
+import Billing from "./pages/Billing";
+import Help from "./pages/Help";
 import AccountSetup from "./pages/signup/AccountSetup";
 import Verification from "./pages/signup/Verification";
 import CompleteSetup from "./pages/signup/CompleteSetup";
@@ -100,6 +103,9 @@ function App() {
                 path="/results/statistics"
                 element={<StatisticsDownload />}
               />
+              <Route path="/account" element={<Account />} />
+              <Route path="/billing" element={<Billing />} />
+              <Route path="/help" element={<Help />} />
             </Routes>
           </div>
         </main>
