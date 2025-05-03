@@ -29,12 +29,12 @@ export default function WebsiteUrl() {
         </div>
 
         <div className="bg-white p-8 rounded-lg shadow">
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
-            <p className="text-sm text-blue-700">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+            <p className="text-sm text-red-700">
               This will be the URL that people use to visit your public league
               website, for example: https://myleague.leaguerepublic.com
             </p>
-            <p className="text-sm text-blue-700 mt-2">
+            <p className="text-sm text-red-700 mt-2">
               You can use your own domain name e.g. myleague.com if you choose a
               Gold plan.
             </p>

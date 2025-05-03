@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
 
 export default function ResultSummary() {
-  const [selectedCompetition, setSelectedCompetition] = useState('All');
-  const [dateFilter, setDateFilter] = useState('last14');
+  const [selectedCompetition, setSelectedCompetition] = useState("All");
+  const [dateFilter, setDateFilter] = useState("last14");
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Result summary by date</h1>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+        Result summary by date
+      </h1>
 
       <div className="space-y-6">
         {/* Filters */}
@@ -25,21 +27,21 @@ export default function ResultSummary() {
 
           <div className="flex gap-2">
             <button
-              onClick={() => setDateFilter('last14')}
+              onClick={() => setDateFilter("last14")}
               className={`px-4 py-2 rounded ${
-                dateFilter === 'last14'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                dateFilter === "last14"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               LAST 14 DAYS ONWARDS
             </button>
             <button
-              onClick={() => setDateFilter('all')}
+              onClick={() => setDateFilter("all")}
               className={`px-4 py-2 rounded ${
-                dateFilter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                dateFilter === "all"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               ALL DATES
@@ -48,11 +50,13 @@ export default function ResultSummary() {
         </div>
 
         {/* Info Message */}
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
           <div className="flex">
-            <AlertCircle className="text-blue-400 mr-2" size={20} />
-            <p className="text-sm text-blue-700">
-              Approve the result of a match to make the result and stats appear on the public pages. Lock stats to prevent them from being changed by administrators.
+            <AlertCircle className="text-red-400 mr-2" size={20} />
+            <p className="text-sm text-red-700">
+              Approve the result of a match to make the result and stats appear
+              on the public pages. Lock stats to prevent them from being changed
+              by administrators.
             </p>
           </div>
         </div>

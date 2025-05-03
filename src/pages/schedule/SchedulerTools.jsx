@@ -1,28 +1,57 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AlertCircle, Clock } from "lucide-react";
+import clsx from "clsx";
+
+const scheduleNavItems = [
+  { id: "manage-matches", label: "MANAGE MATCHES", path: "/schedule" },
+  {
+    id: "scheduler-tools",
+    label: "SCHEDULER TOOLS",
+    path: "/schedule/scheduler-tools",
+  },
+  {
+    id: "manually-create",
+    label: "MANUALLY CREATE",
+    path: "/schedule/manually-create",
+  },
+  { id: "mass-delete", label: "MASS DELETE", path: "/schedule/mass-delete" },
+  { id: "conflicts", label: "CONFLICTS", path: "/schedule/conflicts" },
+  { id: "download", label: "DOWNLOAD", path: "/schedule/download" },
+];
 
 export default function SchedulerTools() {
+  const location = useLocation();
+
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <Link
-          to="/schedule"
-          className="text-blue-600 hover:underline flex items-center gap-2"
-        >
-          ← Back to Manage Matches
-        </Link>
-      </div>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Schedule</h1>
 
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
-        Scheduler Tools
-      </h1>
+      {/* Schedule Navigation */}
+      <div className="mb-6 border-b border-gray-200">
+        <nav className="flex flex-wrap">
+          {scheduleNavItems.map((item) => (
+            <Link
+              key={item.id}
+              to={item.path}
+              className={clsx(
+                "px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap",
+                location.pathname === item.path
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              )}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
 
       <div className="space-y-6">
         {/* Multi Division Scheduler */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-6">
             <div className="flex items-start gap-4">
-              <div className="bg-red-100 text-[#00ADE5] px-3 py-1 rounded-full text-sm font-medium">
+              <div className="bg-red-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
                 new - try this first
               </div>
               <div>
@@ -41,7 +70,7 @@ export default function SchedulerTools() {
                   in 18 weeks and an 8 team division meeting twice in 14 weeks.
                   It accommodates venue sharing between the divisions.
                 </p>
-                <button className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#003366]">
+                <button className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#003366]0">
                   Go →
                 </button>
               </div>

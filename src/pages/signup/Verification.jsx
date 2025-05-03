@@ -32,7 +32,7 @@ export default function Verification() {
           </h2>
           <div className="mt-8 flex justify-center">
             <div className="relative">
-              <Mail className="w-24 h-24 text-blue-500" />
+              <Mail className="w-24 h-24 text-red-500" />
               <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
                 1
               </div>

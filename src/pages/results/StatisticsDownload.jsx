@@ -14,10 +14,10 @@ export default function StatisticsDownload() {
 
       <div className="space-y-6">
         {/* Info Message */}
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
           <div className="flex">
-            <AlertCircle className="text-blue-400 mr-2" size={20} />
-            <p className="text-sm text-blue-700">
+            <AlertCircle className="text-red-400 mr-2" size={20} />
+            <p className="text-sm text-red-700">
               Download a spreadsheet containing all statistics entered for the
               season
             </p>

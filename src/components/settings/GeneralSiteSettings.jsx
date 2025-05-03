@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import moment from 'moment-timezone';
-import Swal from 'sweetalert2';
-import Select from 'react-select'; // ✅ React Select added
+import React, { useState } from "react";
+import moment from "moment-timezone";
+import Swal from "sweetalert2";
+import Select from "react-select"; // ✅ React Select added
 
 // Get time zones with UTC offset
 const getTimeZones = () => {
   return moment.tz.names().map((zone) => {
-    const offset = moment.tz(zone).format('Z');
+    const offset = moment.tz(zone).format("Z");
     return { value: zone, label: `${zone} - UTC${offset}` };
   });
 };
 
 const GeneralSiteSettings = () => {
   const initialFormState = {
-    siteName: '',
-    siteDescription: '',
-    contactEmail: '',
-    timeZone: 'UTC',
+    siteName: "",
+    siteDescription: "",
+    contactEmail: "",
+    timeZone: "UTC",
     enableRegistration: false,
     enableProfiles: false,
     enableNotifications: false,
@@ -24,15 +24,15 @@ const GeneralSiteSettings = () => {
 
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({
-    siteName: '',
-    contactEmail: '',
+    siteName: "",
+    contactEmail: "",
   });
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -45,15 +45,15 @@ const GeneralSiteSettings = () => {
 
   const validateForm = () => {
     let valid = true;
-    const newErrors = { siteName: '', contactEmail: '' };
+    const newErrors = { siteName: "", contactEmail: "" };
 
     if (!formData.siteName) {
-      newErrors.siteName = 'Site Name is required';
+      newErrors.siteName = "Site Name is required";
       valid = false;
     }
 
     if (!formData.contactEmail) {
-      newErrors.contactEmail = 'Contact Email is required';
+      newErrors.contactEmail = "Contact Email is required";
       valid = false;
     }
 
@@ -64,13 +64,13 @@ const GeneralSiteSettings = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      console.log('Form submitted:', formData);
+      console.log("Form submitted:", formData);
       setFormData(initialFormState);
       Swal.fire({
-        title: 'Settings Saved!',
-        text: 'Your settings have been saved successfully.',
-        icon: 'success',
-        confirmButtonText: 'Ok',
+        title: "Settings Saved!",
+        text: "Your settings have been saved successfully.",
+        icon: "success",
+        confirmButtonText: "Ok",
         timer: 3000,
       });
     }
@@ -80,13 +80,18 @@ const GeneralSiteSettings = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-lg font-medium text-gray-800 mb-4">General Site Settings</h2>
+      <h2 className="text-lg font-medium text-gray-800 mb-4">
+        General Site Settings
+      </h2>
 
       <div className="bg-white rounded-lg shadow p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Site Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="site-name">
+            <label
+              className="block text-sm font-medium text-gray-700 mb-2"
+              htmlFor="site-name"
+            >
               Site Name
             </label>
             <input
@@ -98,12 +103,17 @@ const GeneralSiteSettings = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Enter site name"
             />
-            {errors.siteName && <p className="text-sm text-red-600 mt-2">{errors.siteName}</p>}
+            {errors.siteName && (
+              <p className="text-sm text-blue-600 mt-2">{errors.siteName}</p>
+            )}
           </div>
 
           {/* Site Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="site-description">
+            <label
+              className="block text-sm font-medium text-gray-700 mb-2"
+              htmlFor="site-description"
+            >
               Site Description
             </label>
             <textarea
@@ -119,7 +129,10 @@ const GeneralSiteSettings = () => {
 
           {/* Contact Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="contact-email">
+            <label
+              className="block text-sm font-medium text-gray-700 mb-2"
+              htmlFor="contact-email"
+            >
               Contact Email
             </label>
             <input
@@ -131,28 +144,37 @@ const GeneralSiteSettings = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Enter contact email"
             />
-            {errors.contactEmail && <p className="text-sm text-red-600 mt-2">{errors.contactEmail}</p>}
+            {errors.contactEmail && (
+              <p className="text-sm text-blue-600 mt-2">
+                {errors.contactEmail}
+              </p>
+            )}
           </div>
 
           {/* Time Zone Dropdown with react-select */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="time-zone">
+            <label
+              className="block text-sm font-medium text-gray-700 mb-2"
+              htmlFor="time-zone"
+            >
               Time Zone
             </label>
             <Select
               id="time-zone"
               name="timeZone"
               options={timeZoneOptions}
-              value={timeZoneOptions.find((opt) => opt.value === formData.timeZone)}
+              value={timeZoneOptions.find(
+                (opt) => opt.value === formData.timeZone
+              )}
               onChange={handleTimeZoneChange}
               className="text-sm"
               classNamePrefix="react-select"
               styles={{
                 control: (base) => ({
                   ...base,
-                  borderColor: '#d1d5db',
-                  boxShadow: 'none',
-                  '&:hover': { borderColor: '#9ca3af' },
+                  borderColor: "#d1d5db",
+                  boxShadow: "none",
+                  "&:hover": { borderColor: "#9ca3af" },
                 }),
               }}
             />
@@ -160,7 +182,9 @@ const GeneralSiteSettings = () => {
 
           {/* Site Features */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Site Features</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Site Features
+            </label>
             <div className="space-y-2">
               <label className="flex items-center space-x-2">
                 <input
@@ -168,9 +192,11 @@ const GeneralSiteSettings = () => {
                   name="enableRegistration"
                   checked={formData.enableRegistration}
                   onChange={handleChange}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
                 />
-                <span className="text-sm text-gray-600">Enable user registration</span>
+                <span className="text-sm text-gray-600">
+                  Enable user registration
+                </span>
               </label>
               <label className="flex items-center space-x-2">
                 <input
@@ -178,9 +204,11 @@ const GeneralSiteSettings = () => {
                   name="enableProfiles"
                   checked={formData.enableProfiles}
                   onChange={handleChange}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
                 />
-                <span className="text-sm text-gray-600">Enable public profiles</span>
+                <span className="text-sm text-gray-600">
+                  Enable public profiles
+                </span>
               </label>
               <label className="flex items-center space-x-2">
                 <input
@@ -188,9 +216,11 @@ const GeneralSiteSettings = () => {
                   name="enableNotifications"
                   checked={formData.enableNotifications}
                   onChange={handleChange}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
                 />
-                <span className="text-sm text-gray-600">Enable notifications</span>
+                <span className="text-sm text-gray-600">
+                  Enable notifications
+                </span>
               </label>
             </div>
           </div>
@@ -199,7 +229,7 @@ const GeneralSiteSettings = () => {
           <div className="flex gap-4">
             <button
               type="submit"
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#003366]0"
             >
               Save Settings
             </button>
