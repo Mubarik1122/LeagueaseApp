@@ -81,7 +81,7 @@ function App() {
               <Route path="/" element={<AdminHome />} />
               <Route path="/setup" element={<Setup />} />
               <Route path="/setup/competitions" element={<Competitions />} />
-              <Route path="/people" element={<People />} />
+              <Route path="/people*" element={<People />} />
               <Route path="/schedule" element={<ManageMatches />} />
               <Route
                 path="/schedule/scheduler-tools"
