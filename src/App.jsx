@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
+import Home from "./pages/Home";
 import AdminHome from "./pages/AdminHome";
 import Setup from "./pages/Setup";
 import People from "./pages/People";
