@@ -49,10 +49,7 @@ function App() {
     return (
       <Router>
         <Routes>
-          <Route
-            path="/"
-            element={<Login onLogin={() => setIsAuthenticated(true)} />}
-          />
+          <Route path="/" element={<Home />} />
           <Route
             path="/login"
             element={<Login onLogin={() => setIsAuthenticated(true)} />}
