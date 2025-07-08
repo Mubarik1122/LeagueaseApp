@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import Swal from "sweetalert2";
 
 export default function AccountSetup() {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  console.log("Base URL: " + BASE_URL);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -17,6 +16,46 @@ export default function AccountSetup() {
     email: "",
     acceptTerms: "",
   });
+
+  const [googleError, setGoogleError] = useState(null);
+
+  // 🔁 Listen for Google login result
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (!event.origin.includes("localhost") && !event.origin.includes("vercel.app")) return;
+
+      const { token, error } = event.data;
+
+      if (token) {
+        localStorage.setItem("token", token);
+        Swal.fire({
+          icon: "success",
+          title: "Logged in with Google!",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        navigate("/login");
+      } else if (error === "UserAlreadyExists") {
+        Swal.fire({
+          icon: "warning",
+          title: "Account Exists",
+          text: "An account with this email already exists. Please login instead.",
+          confirmButtonText: "Login",
+        }).then((res) => {
+          if (res.isConfirmed) navigate("/login");
+        });
+      } else if (error === "GoogleLoginFailed") {
+        Swal.fire({
+          icon: "error",
+          title: "Google Login Failed",
+          text: "Something went wrong. Please try again.",
+        });
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   const validate = () => {
     const newErrors = { email: "", acceptTerms: "" };
@@ -39,8 +78,9 @@ export default function AccountSetup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    
+
     localStorage.setItem("signupEmail", formData.email);
+
     try {
       const response = await fetch(`${BASE_URL}/auth/request-otp`, {
         method: "POST",
@@ -50,39 +90,44 @@ export default function AccountSetup() {
         body: JSON.stringify({ email: formData.email }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to request OTP.");
+      if (result.errorCode === 1) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: result.errorMessage || "Failed to request OTP.",
+        });
+        return;
       }
 
-      // Case 1: User already verified and fully registered
-      if (data.isVerified && data.isUserCreated) {
+      const { isVerified, isUserCreated } = result.data;
+
+      if (isVerified && isUserCreated) {
         Swal.fire({
           icon: "warning",
           title: "This user already exists",
           text: "An account with this email is already created.",
           confirmButtonText: "Login",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            navigate("/login");
-          }
+        }).then((res) => {
+          if (res.isConfirmed) navigate("/login");
         });
         return;
       }
 
-      // Case 2: User already verified but not completed signup
-      if (data.isVerified && !data.isUserCreated) {
+      if (isVerified && !isUserCreated) {
         navigate("/signup/complete");
         return;
       }
 
-      // Case 3: New user or unverified user
       navigate("/signup/verify");
-
     } catch (err) {
       console.error("OTP Request Error:", err);
-      alert("Failed to request OTP. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Unexpected Error",
+        text: "Something went wrong. Please try again later.",
+      });
     }
   };
 
@@ -108,8 +153,32 @@ export default function AccountSetup() {
           </div>
 
           <div className="bg-white py-8 px-4 shadow-sm rounded-lg sm:px-10">
+
+            {/* 🔴 Google login error above email input */}
+            {googleError && (
+              <div className="mb-4 text-red-600 text-sm font-medium text-center">
+                {googleError}
+              </div>
+            )}
+
+            {/* 🔘 Google Login */}
             <button
               type="button"
+              onClick={() => {
+                setGoogleError(""); // clear old errors
+                const width = 500;
+                const height = 600;
+                const left = (window.innerWidth - width) / 2;
+                const top = (window.innerHeight - height) / 2;
+
+                const popup = window.open(
+                  `${BASE_URL}/auth/google`,
+                  'GoogleSignIn',
+                  `width=${width},height=${height},top=${top},left=${left}`
+                );
+
+                if (popup) popup.focus();
+              }}
               className="w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-100 mb-6 flex items-center justify-center gap-2"
             >
               <img
@@ -159,11 +228,11 @@ export default function AccountSetup() {
                   className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded mt-1"
                 />
                 <label htmlFor="acceptTerms" className="ml-2 text-sm text-gray-900">
-                  I accept {" "}
+                  I accept{" "}
                   <Link to="/terms" className="text-blue-600 hover:underline">
                     Terms & Conditions
                   </Link>{" "}
-                  and {" "}
+                  and{" "}
                   <Link to="/privacy" className="text-blue-600 hover:underline">
                     Privacy Policy
                   </Link>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function Verification() {
   const navigate = useNavigate();
@@ -50,28 +51,42 @@ export default function Verification() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (verificationCode.length !== 6) return;
 
     try {
       const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
       const response = await fetch(`${BASE_URL}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp: verificationCode }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (response.ok && data.verified) {
+      if (result.errorCode === 0 && result.data?.verified) {
         navigate("/signup/complete");
       } else {
-        alert(data.message || data.error || "Verification failed");
+        Swal.fire({
+          icon: "error",
+          title: "Verification Failed",
+          text:
+            result.errorMessage ||
+            result.data?.message ||
+            "Invalid OTP or expired.",
+        });
       }
     } catch (err) {
       console.error("OTP verification error:", err);
-      alert("Something went wrong. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Unexpected Error",
+        text: "Something went wrong. Please try again later.",
+      });
     }
   };
+
 
   const handleResend = async () => {
     setResendDisabled(true);
@@ -86,14 +101,33 @@ export default function Verification() {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Resend failed");
-      alert("Verification code resent.");
+      const result = await response.json();
+
+      if (result.errorCode === 0) {
+        Swal.fire({
+          icon: "success",
+          title: "OTP Sent",
+          text: result.data?.message || "A new OTP has been sent to your email.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Resend Failed",
+          text: result.errorMessage || "Unable to resend OTP. Please try again.",
+        });
+      }
     } catch (err) {
       console.error("Resend OTP error:", err);
-      alert("Failed to resend verification code. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Unexpected Error",
+        text: "Something went wrong. Please try again later.",
+      });
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">

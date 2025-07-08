@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import clsx from "clsx";
+import Swal from "sweetalert2";
 import ApprovalAndLocking from "./ApprovalAndLocking";
 import MatchOfficialsAndMarks from "./MatchOfficialsAndMarks";
 import PlayerRoleActiveDates from "./PlayerRoleActiveDates";
@@ -47,6 +48,32 @@ export default function LeagueOptions() {
     },
   });
 
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const result = await response.json();
+        if (result.errorCode === 0 && result.data) {
+          setFormData((prev) => ({
+            ...prev,
+            ...result.data,
+          }));
+        } else {
+          console.warn("Settings not found or error:", result.errorMessage);
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   const handleCheckboxChange = (field) => {
     setFormData((prev) => ({
       ...prev,
@@ -64,150 +91,168 @@ export default function LeagueOptions() {
     }));
   };
 
+  const handleSave = async () => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userId = user?.userId;
+
+    const tabMapping = {
+      "team-admin": "TeamAdminOptions",
+      approval: "ApprovalAndLocking",
+      "match-officials": "MatchOfficials",
+      "player-role": "PlayerRoleActiveDates",
+      "people-duplication": "PeopleDuplication",
+      "player-suspension": "PlayerSuspension",
+      venues: "Venues",
+      "match-file": "MatchFileUpload",
+    };
+
+    const tab = tabMapping[activeMenuItem];
+    if (!tab) return Swal.fire("Invalid Tab", "Invalid tab selected", "warning");
+
+    const data = {
+      blockTeamAdmins: formData.blockTeamAdmins,
+      allowStatsEntry: formData.allowStatsEntry,
+      allowDivisionMatches: formData.allowDivisionMatches,
+      homeTeamOptions: { ...formData.homeTeamOptions },
+      awayTeamOptions: { ...formData.awayTeamOptions },
+    };
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/settings/save`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            tab,
+            data,
+            userId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok && result.errorCode === 0) {
+        Swal.fire("Success", "Settings saved successfully.", "success");
+      } else {
+        Swal.fire(
+          "Failed",
+          result.errorMessage || "Something went wrong.",
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      Swal.fire("Network Error", "Unable to save settings.", "error");
+    }
+  };
+
   const renderContent = () => {
     switch (activeMenuItem) {
       case "approval":
-        return <ApprovalAndLocking />;
+        return <ApprovalAndLocking formData={formData} setFormData={setFormData} />;
       case "match-officials":
-        return <MatchOfficialsAndMarks />;
+        return <MatchOfficialsAndMarks formData={formData} setFormData={setFormData} />;
       case "player-role":
-        return <PlayerRoleActiveDates />;
+        return <PlayerRoleActiveDates formData={formData} setFormData={setFormData} />;
       case "people-duplication":
-        return <PeopleDuplication />;
+        return <PeopleDuplication formData={formData} setFormData={setFormData} />;
       case "player-suspension":
-        return <PlayerSuspension />;
+        return <PlayerSuspension formData={formData} setFormData={setFormData} />;
       case "venues":
-        return <Venues />;
+        return <Venues formData={formData} setFormData={setFormData} />;
       case "match-file":
-        return <MatchFileUpload />;
+        return <MatchFileUpload formData={formData} setFormData={setFormData} />;
       case "team-admin":
         return (
-          <>
+          <div className="text-gray-600">
             <h2 className="text-lg font-medium text-gray-800 mb-4">
               Team Admin Results and matches options
             </h2>
+            <div className="space-y-4">
+              <label className="flex gap-2 items-center">
+                <input
+                  type="checkbox"
+                  checked={formData.blockTeamAdmins}
+                  onChange={() => handleCheckboxChange("blockTeamAdmins")}
+                />
+                Block Team Admins from changing match status?
+              </label>
+              <label className="flex gap-2 items-center">
+                <input
+                  type="checkbox"
+                  checked={formData.allowStatsEntry}
+                  onChange={() => handleCheckboxChange("allowStatsEntry")}
+                />
+                Allow stats entry for opposition team?
+              </label>
+              <label className="flex gap-2 items-center">
+                <input
+                  type="checkbox"
+                  checked={formData.allowDivisionMatches}
+                  onChange={() => handleCheckboxChange("allowDivisionMatches")}
+                />
+                Allow creation of division matches?
+              </label>
+            </div>
 
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-gray-700">Options:</h3>
-                <div className="space-y-3">
-                  <label className="flex items-start space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.blockTeamAdmins}
-                      onChange={() => handleCheckboxChange("blockTeamAdmins")}
-                      className="mt-1 rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
-                    />
-                    <span className="text-sm text-gray-600">
-                      Block Team Administrators from changing the match status
-                      of a match?
-                    </span>
-                  </label>
-
-                  <label className="flex items-start space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.allowStatsEntry}
-                      onChange={() => handleCheckboxChange("allowStatsEntry")}
-                      className="mt-1 rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
-                    />
-                    <span className="text-sm text-gray-600">
-                      Allow Team Administrators to enter stats for opposition
-                      team
-                    </span>
-                  </label>
-
-                  <label className="flex items-start space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.allowDivisionMatches}
-                      onChange={() =>
-                        handleCheckboxChange("allowDivisionMatches")
-                      }
-                      className="mt-1 rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
-                    />
-                    <span className="text-sm text-gray-600">
-                      Allow Team Administrators to create division matches
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="mt-8 overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 text-sm font-medium text-gray-500">
-                        Team Admin Options:
-                      </th>
-                      <th className="text-center py-2 text-sm font-medium text-gray-500">
-                        When Home Team
-                      </th>
-                      <th className="text-center py-2 text-sm font-medium text-gray-500">
-                        When Away Team
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      { id: "changeDate", label: "Change match date" },
-                      { id: "changeTime", label: "Change match time" },
-                      { id: "changeStatus", label: "Change match date status" },
-                      { id: "changeVenue", label: "Change match venue" },
-                    ].map((option) => (
-                      <tr key={option.id} className="border-b border-gray-100">
-                        <td className="py-2 text-sm text-gray-600">
-                          {option.label}
-                        </td>
-                        <td className="text-center">
+            <div className="mt-6">
+              <h3 className="font-medium mb-2">Home / Away Options</h3>
+              <table className="w-full text-left">
+                <thead>
+                  <tr>
+                    <th>Option</th>
+                    <th>Home Team</th>
+                    <th>Away Team</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {["changeDate", "changeTime", "changeStatus", "changeVenue"].map(
+                    (option) => (
+                      <tr key={option}>
+                        <td>{option.replace("change", "Change ")}</td>
+                        <td>
                           <input
                             type="checkbox"
-                            checked={formData.homeTeamOptions[option.id]}
-                            onChange={() =>
-                              handleTeamOptionChange("homeTeam", option.id)
-                            }
-                            className="rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
+                            checked={formData.homeTeamOptions[option]}
+                            onChange={() => handleTeamOptionChange("homeTeam", option)}
                           />
                         </td>
-                        <td className="text-center">
+                        <td>
                           <input
                             type="checkbox"
-                            checked={formData.awayTeamOptions[option.id]}
-                            onChange={() =>
-                              handleTeamOptionChange("awayTeam", option.id)
-                            }
-                            className="rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]"
+                            checked={formData.awayTeamOptions[option]}
+                            onChange={() => handleTeamOptionChange("awayTeam", option)}
                           />
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex flex-wrap gap-4 mt-8">
-                <button className="px-4 py-2 bg-[#00ADE5] text-white rounded hover:bg-[#009acb]">
-                  Update
-                </button>
-                <button className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
-                  Back
-                </button>
-              </div>
+                    )
+                  )}
+                </tbody>
+              </table>
             </div>
-          </>
-        );
-      default:
-        return (
-          <div className="p-4">
-            <p className="text-gray-600">Content coming soon...</p>
+
+            <div className="mt-6 flex gap-4">
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Save Settings
+              </button>
+            </div>
           </div>
         );
+      default:
+        return <div className="p-4 text-gray-600">Content coming soon...</div>;
     }
   };
 
   return (
     <div className="flex flex-col md:flex-row">
-      {/* Mobile Menu Button */}
       <div className="md:hidden p-4 border-b border-gray-200">
         <button
           onClick={() => setIsSideMenuOpen(!isSideMenuOpen)}
@@ -218,7 +263,6 @@ export default function LeagueOptions() {
         </button>
       </div>
 
-      {/* Side Menu */}
       <div
         className={clsx(
           "md:w-64 md:border-r md:border-gray-200 bg-white",
@@ -247,7 +291,6 @@ export default function LeagueOptions() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 p-4 md:p-6">{renderContent()}</div>
     </div>
   );
