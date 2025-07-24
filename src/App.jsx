@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { AuthProvider } from "./hooks/useAuth";
+import { useAuth } from "./hooks/useAuth";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import Home from "./pages/Home";
@@ -128,13 +129,6 @@ function AppContent({ isMobileMenuOpen, setIsMobileMenuOpen }) {
         </div>
       </main>
     </div>
-  );
-}
-
-// Add import for useAuth at the top
-import { useAuth } from "./hooks/useAuth";
-      </div>
-    </Router>
   );
 }
 
