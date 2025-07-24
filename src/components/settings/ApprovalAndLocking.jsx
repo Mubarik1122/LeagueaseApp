@@ -1,9 +1,74 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
 const ApprovalAndLocking = () => {
-  const [lockMatchStats, setLockMatchStats] = useState(false);
-  const [approvalOption, setApprovalOption] = useState("manualApproveAutoLock");
-  const [enableLiveResults, setEnableLiveResults] = useState(false);
+  const [formData, setFormData] = useState({
+    lockMatchStats: false,
+    approvalOption: "manualApproveAutoLock",
+    enableLiveResults: false,
+  });
+
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.userId;
+
+  // Fetch settings on component load
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const result = await res.json();
+
+        if (result.errorCode === 0 && result.data) {
+          // Pull flat values directly from settings object
+          setFormData({
+            lockMatchStats: result.data.lockMatchStats ?? false,
+            approvalOption: result.data.approvalOption ?? "manualApproveAutoLock",
+            enableLiveResults: result.data.enableLiveResults ?? false,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  // Save to backend
+  const handleSave = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tab: "ApprovalAndLocking",
+          data: formData,
+          userId,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (res.ok && result.errorCode === 0) {
+        Swal.fire("Saved", "Settings saved successfully!", "success");
+      } else {
+        Swal.fire("Error", result.errorMessage || "Failed to save", "error");
+      }
+    } catch (err) {
+      console.error("Save error:", err);
+      Swal.fire("Error", "Network error", "error");
+    }
+  };
 
   return (
     <div className="border rounded-lg p-4 mb-6">
@@ -14,31 +79,19 @@ const ApprovalAndLocking = () => {
       <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
         <div className="flex">
           <div className="text-red-500 mr-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" stroke="currentColor" fill="none" strokeWidth="2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="16" x2="12" y2="12"></line>
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
           </div>
           <p className="text-sm text-gray-700">
-            When a result is reported (scoreline and statistics) leagues have
-            control over whether the result appears automatically, or has to be
-            approved first, and whether the scoreline and statistics can be
-            locked, preventing team administrators from further updating them.
+            When a result is reported (scoreline and statistics) leagues have control over whether the result appears automatically or needs approval, and whether the stats can be locked.
           </p>
         </div>
       </div>
 
+      {/* Lock Match Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-center">
         <div className="md:col-span-1 text-right text-gray-600 font-medium">
           Locking Match Statistics
@@ -47,124 +100,88 @@ const ApprovalAndLocking = () => {
           <label className="flex items-center">
             <input
               type="checkbox"
-              className="rounded text-[#00ADE5] focus:ring-[#00ADE5] mr-2"
-              checked={lockMatchStats}
-              onChange={(e) => setLockMatchStats(e.target.checked)}
+              checked={formData.lockMatchStats}
+              onChange={(e) =>
+                setFormData({ ...formData, lockMatchStats: e.target.checked })
+              }
+              className="mr-2 text-[#00ADE5]"
             />
-            <span className="text-gray-700">
-              Allow match statistics to be locked - locking prevents further
-              updating by Team Administrators.
-            </span>
+            Allow match statistics to be locked - prevents further updates by Team Admins
           </label>
         </div>
       </div>
 
       <hr className="my-6" />
 
-      <div className="mb-4">
-        <h3 className="text-gray-600 font-medium mb-4">
-          Approval and Locking Scorelines (Match Statistics may be locked
-          separately)
-        </h3>
-      </div>
-
+      {/* Approval Options */}
+      <h3 className="text-gray-600 font-medium mb-4">
+        Approval and Locking Scorelines (Match Statistics may be locked separately)
+      </h3>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2 items-start">
         <div className="md:col-span-1 text-right text-gray-600 font-medium">
           Options:
         </div>
         <div className="md:col-span-3 space-y-2">
-          <label className="flex items-start">
-            <input
-              type="radio"
-              name="approvalOption"
-              value="manualApproveAutoLock"
-              className="mt-1 text-[#00ADE5] focus:ring-[#00ADE5] mr-2"
-              checked={approvalOption === "manualApproveAutoLock"}
-              onChange={() => setApprovalOption("manualApproveAutoLock")}
-            />
-            <span className="text-gray-700">
-              Manually approve scores, which also auto-locks scores
-            </span>
-          </label>
-
-          <label className="flex items-start">
-            <input
-              type="radio"
-              name="approvalOption"
-              value="manualApproveSeparateLock"
-              className="mt-1 text-[#00ADE5] focus:ring-[#00ADE5] mr-2"
-              checked={approvalOption === "manualApproveSeparateLock"}
-              onChange={() => setApprovalOption("manualApproveSeparateLock")}
-            />
-            <span className="text-gray-700">
-              Manually approve scores, scores are locked separately
-            </span>
-          </label>
-
-          <label className="flex items-start">
-            <input
-              type="radio"
-              name="approvalOption"
-              value="autoApproveNoLock"
-              className="mt-1 text-[#00ADE5] focus:ring-[#00ADE5] mr-2"
-              checked={approvalOption === "autoApproveNoLock"}
-              onChange={() => setApprovalOption("autoApproveNoLock")}
-            />
-            <span className="text-gray-700">
-              Auto-approve scores for immediate publishing / scores cannot be
-              locked
-            </span>
-          </label>
-
-          <label className="flex items-start">
-            <input
-              type="radio"
-              name="approvalOption"
-              value="autoApproveCanLock"
-              className="mt-1 text-[#00ADE5] focus:ring-[#00ADE5] mr-2"
-              checked={approvalOption === "autoApproveCanLock"}
-              onChange={() => setApprovalOption("autoApproveCanLock")}
-            />
-            <span className="text-gray-700">
-              Auto-approve scores for immediate publishing / scores can be
-              locked
-            </span>
-          </label>
+          {[
+            { value: "manualApproveAutoLock", label: "Manually approve scores, which also auto-locks scores" },
+            { value: "manualApproveSeparateLock", label: "Manually approve scores, scores are locked separately" },
+            { value: "autoApproveNoLock", label: "Auto-approve scores / cannot be locked" },
+            { value: "autoApproveCanLock", label: "Auto-approve scores / can be locked" },
+          ].map((opt) => (
+            <label key={opt.value} className="flex items-start">
+              <input
+                type="radio"
+                name="approvalOption"
+                value={opt.value}
+                checked={formData.approvalOption === opt.value}
+                onChange={() =>
+                  setFormData({ ...formData, approvalOption: opt.value })
+                }
+                className="mt-1 mr-2 text-[#00ADE5]"
+              />
+              {opt.label}
+            </label>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-center">
+      {/* Live Results */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-center mt-4">
         <div className="md:col-span-1 text-right text-gray-600 font-medium">
           Live Results
         </div>
         <div className="md:col-span-3">
-          <div>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="rounded text-[#00ADE5] focus:ring-[#00ADE5] mr-2"
-                checked={enableLiveResults}
-                onChange={(e) => setEnableLiveResults(e.target.checked)}
-              />
-              <span className="text-gray-700">Enable Live Results</span>
-            </label>
-            <p className="text-sm text-gray-500 mt-1 ml-6">
-              Display live results on your site
-            </p>
-          </div>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={formData.enableLiveResults}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  enableLiveResults: e.target.checked,
+                })
+              }
+              className="mr-2 text-[#00ADE5]"
+            />
+            Enable Live Results
+          </label>
+          <p className="text-sm text-gray-500 ml-6">
+            Display live results on your site
+          </p>
         </div>
       </div>
 
+      {/* Buttons */}
       <div className="mt-6 flex gap-2">
         <button
+          onClick={handleSave}
           className="px-4 py-2 bg-[#00ADE5] text-white rounded hover:bg-[#009acb] transition"
-          type="button"
         >
           Update
         </button>
         <button
+          onClick={() => window.history.back()}
           className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition"
-          type="button"
         >
           Back
         </button>

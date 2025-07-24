@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import moment from "moment-timezone";
 import Swal from "sweetalert2";
-import Select from "react-select"; // ✅ React Select added
+import Select from "react-select";
 
 // Get time zones with UTC offset
 const getTimeZones = () => {
@@ -23,10 +23,35 @@ const GeneralSiteSettings = () => {
   };
 
   const [formData, setFormData] = useState(initialFormState);
-  const [errors, setErrors] = useState({
-    siteName: "",
-    contactEmail: "",
-  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const token = localStorage.getItem("token");
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const result = await response.json();
+
+        if (result.errorCode === 0 && result.data.generalSettings) {
+          setFormData((prev) => ({
+            ...prev,
+            ...result.data.generalSettings,
+          }));
+        } else {
+          console.warn("Failed to fetch settings:", result.errorMessage);
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -39,40 +64,49 @@ const GeneralSiteSettings = () => {
   const handleTimeZoneChange = (selectedOption) => {
     setFormData({
       ...formData,
-      timeZone: selectedOption.value,
+      timeZone: selectedOption?.value || "UTC",
     });
   };
 
-  const validateForm = () => {
-    let valid = true;
-    const newErrors = { siteName: "", contactEmail: "" };
-
-    if (!formData.siteName) {
-      newErrors.siteName = "Site Name is required";
-      valid = false;
-    }
-
-    if (!formData.contactEmail) {
-      newErrors.contactEmail = "Contact Email is required";
-      valid = false;
-    }
-
-    setErrors(newErrors);
-    return valid;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log("Form submitted:", formData);
-      setFormData(initialFormState);
-      Swal.fire({
-        title: "Settings Saved!",
-        text: "Your settings have been saved successfully.",
-        icon: "success",
-        confirmButtonText: "Ok",
-        timer: 3000,
+
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userId = user?.userId;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tab: "GeneralSiteSettings",
+          userId,
+          data: {
+            generalSettings: formData, // ✅ wrap in generalSettings
+          },
+        }),
       });
+
+      const result = await response.json();
+
+      if (response.ok && result.errorCode === 0) {
+        Swal.fire({
+          title: "Settings Saved!",
+          text: "Your settings have been saved successfully.",
+          icon: "success",
+          confirmButtonText: "Ok",
+          timer: 3000,
+        });
+      } else {
+        Swal.fire("Failed", result.errorMessage || "Save failed.", "error");
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      Swal.fire("Error", "Network error while saving.", "error");
     }
   };
 
@@ -88,40 +122,29 @@ const GeneralSiteSettings = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Site Name */}
           <div>
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="site-name"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Site Name
             </label>
             <input
               type="text"
-              id="site-name"
               name="siteName"
-              value={formData.siteName}
+              value={formData.siteName || ""}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Enter site name"
             />
-            {errors.siteName && (
-              <p className="text-sm text-blue-600 mt-2">{errors.siteName}</p>
-            )}
           </div>
 
           {/* Site Description */}
           <div>
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="site-description"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Site Description
             </label>
             <textarea
-              id="site-description"
               name="siteDescription"
-              value={formData.siteDescription}
+              value={formData.siteDescription || ""}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               rows="4"
               placeholder="Enter site description"
             />
@@ -129,38 +152,25 @@ const GeneralSiteSettings = () => {
 
           {/* Contact Email */}
           <div>
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="contact-email"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Contact Email
             </label>
             <input
               type="email"
-              id="contact-email"
               name="contactEmail"
-              value={formData.contactEmail}
+              value={formData.contactEmail || ""}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Enter contact email"
             />
-            {errors.contactEmail && (
-              <p className="text-sm text-blue-600 mt-2">
-                {errors.contactEmail}
-              </p>
-            )}
           </div>
 
-          {/* Time Zone Dropdown with react-select */}
+          {/* Time Zone Dropdown */}
           <div>
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="time-zone"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Time Zone
             </label>
             <Select
-              id="time-zone"
               name="timeZone"
               options={timeZoneOptions}
               value={timeZoneOptions.find(
@@ -180,7 +190,7 @@ const GeneralSiteSettings = () => {
             />
           </div>
 
-          {/* Site Features */}
+          {/* Feature Toggles */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Site Features
@@ -190,37 +200,31 @@ const GeneralSiteSettings = () => {
                 <input
                   type="checkbox"
                   name="enableRegistration"
-                  checked={formData.enableRegistration}
+                  checked={formData.enableRegistration || false}
                   onChange={handleChange}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
+                  className="rounded border-gray-300 text-blue-600"
                 />
-                <span className="text-sm text-gray-600">
-                  Enable user registration
-                </span>
+                <span className="text-sm text-gray-600">Enable user registration</span>
               </label>
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   name="enableProfiles"
-                  checked={formData.enableProfiles}
+                  checked={formData.enableProfiles || false}
                   onChange={handleChange}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
+                  className="rounded border-gray-300 text-blue-600"
                 />
-                <span className="text-sm text-gray-600">
-                  Enable public profiles
-                </span>
+                <span className="text-sm text-gray-600">Enable public profiles</span>
               </label>
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   name="enableNotifications"
-                  checked={formData.enableNotifications}
+                  checked={formData.enableNotifications || false}
                   onChange={handleChange}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
+                  className="rounded border-gray-300 text-blue-600"
                 />
-                <span className="text-sm text-gray-600">
-                  Enable notifications
-                </span>
+                <span className="text-sm text-gray-600">Enable notifications</span>
               </label>
             </div>
           </div>
@@ -229,7 +233,7 @@ const GeneralSiteSettings = () => {
           <div className="flex gap-4">
             <button
               type="submit"
-              className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#003366]0"
+              className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#002244]"
             >
               Save Settings
             </button>

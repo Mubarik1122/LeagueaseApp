@@ -18,7 +18,7 @@ import LeagueTypeSelection from "./pages/signup/LeagueTypeSelection";
 import SportSelection from "./pages/signup/SportSelection";
 import LeagueDetails from "./pages/signup/LeagueDetails";
 import WebsiteUrl from "./pages/signup/WebsiteUrl";
-import Subscription from "./pages/signup/Subscription";
+// import Subscription from "./pages/signup/Subscription";
 import ManageMatches from "./pages/schedule/ManageMatches";
 import SchedulerTools from "./pages/schedule/SchedulerTools";
 import ManuallyCreate from "./pages/schedule/ManuallyCreate";
@@ -61,7 +61,7 @@ function App() {
           <Route path="/signup/sport-selection" element={<SportSelection />} />
           <Route path="/signup/league-details" element={<LeagueDetails />} />
           <Route path="/signup/website-url" element={<WebsiteUrl />} />
-          <Route path="/signup/subscription" element={<Subscription />} />
+          {/* <Route path="/signup/subscription" element={<Subscription />} /> */}
         </Routes>
       </Router>
     );

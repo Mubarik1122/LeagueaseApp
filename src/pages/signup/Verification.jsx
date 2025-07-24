@@ -1,27 +1,133 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function Verification() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
+  const [timer, setTimer] = useState(60);
+  const [resendDisabled, setResendDisabled] = useState(true);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("signupEmail");
     if (!storedEmail) {
       navigate("/signup");
+    } else {
+      setEmail(storedEmail);
+
+      // 🕒 Load timer state from localStorage if it exists
+      const lastSent = localStorage.getItem("otpSentAt");
+      if (lastSent) {
+        const secondsPassed = Math.floor((Date.now() - parseInt(lastSent)) / 1000);
+        const remaining = 60 - secondsPassed;
+        if (remaining > 0) {
+          setTimer(remaining);
+          setResendDisabled(true);
+        } else {
+          setTimer(0);
+          setResendDisabled(false);
+        }
+      }
     }
-    setEmail(storedEmail);
   }, [navigate]);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    let countdown;
+    if (resendDisabled && timer > 0) {
+      countdown = setInterval(() => {
+        setTimer((prev) => {
+          if (prev === 1) {
+            setResendDisabled(false);
+            clearInterval(countdown);
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(countdown);
+  }, [resendDisabled, timer]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // For demo purposes, any 4-digit code will work
-    if (verificationCode.length === 4) {
-      navigate("/signup/complete");
+
+    if (verificationCode.length !== 6) return;
+
+    try {
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+      const response = await fetch(`${BASE_URL}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: verificationCode }),
+      });
+
+      const result = await response.json();
+
+      if (result.errorCode === 0 && result.data?.verified) {
+        navigate("/signup/complete");
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Verification Failed",
+          text:
+            result.errorMessage ||
+            result.data?.message ||
+            "Invalid OTP or expired.",
+        });
+      }
+    } catch (err) {
+      console.error("OTP verification error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Unexpected Error",
+        text: "Something went wrong. Please try again later.",
+      });
     }
   };
+
+
+  const handleResend = async () => {
+    setResendDisabled(true);
+    setTimer(60);
+    localStorage.setItem("otpSentAt", Date.now().toString());
+
+    try {
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      const response = await fetch(`${BASE_URL}/auth/request-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (result.errorCode === 0) {
+        Swal.fire({
+          icon: "success",
+          title: "OTP Sent",
+          text: result.data?.message || "A new OTP has been sent to your email.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Resend Failed",
+          text: result.errorMessage || "Unable to resend OTP. Please try again.",
+        });
+      }
+    } catch (err) {
+      console.error("Resend OTP error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Unexpected Error",
+        text: "Something went wrong. Please try again later.",
+      });
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
@@ -42,40 +148,55 @@ export default function Verification() {
 
         <div className="bg-white p-8 rounded-lg shadow">
           <p className="text-gray-600 mb-6">
-            Next step is to verify your email address, we've sent an email to
+            A 6-digit code has been sent to:
             <br />
             <span className="font-medium">{email}</span>
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Enter verification code:
               </label>
               <input
                 type="text"
-                maxLength="4"
+                maxLength="6"
                 value={verificationCode}
                 onChange={(e) =>
                   setVerificationCode(e.target.value.replace(/\D/g, ""))
                 }
-                className="block w-32 mx-auto text-center border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
-                placeholder="1234"
+                className="block w-40 mx-auto text-center border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
+                placeholder="123456"
               />
             </div>
 
             <button
               type="submit"
-              disabled={verificationCode.length !== 4}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#003366] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5] disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={verificationCode.length !== 6}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#002244] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5] disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               Verify
             </button>
+
+            <div className="text-sm mt-4">
+              {resendDisabled ? (
+                <p className="text-gray-500">
+                  Resend available in <span className="font-medium">{timer}</span> seconds
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  className="text-blue-600 hover:underline"
+                >
+                  Resend Code
+                </button>
+              )}
+            </div>
           </form>
 
-          <p className="mt-4 text-sm text-gray-500">
-            If you don't receive an email please check your spam folder and if
-            it is not there please contact us using the chat facility below.
+          <p className="mt-6 text-sm text-gray-500">
+            Didn’t receive the code? Check your spam folder or contact support.
           </p>
         </div>
       </div>

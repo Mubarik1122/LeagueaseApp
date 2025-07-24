@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
 const PeopleDuplication = () => {
   const [enabled, setEnabled] = useState(true);
@@ -9,11 +10,81 @@ const PeopleDuplication = () => {
     zip: false,
   });
 
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.userId;
+
+  // Fetch settings from backend
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const result = await res.json();
+
+        if (result.errorCode === 0 && result.data) {
+          setEnabled(result.data.peopleDuplicationEnabled ?? true);
+          setCriteria({
+            lastName: result.data.duplicationCriteria?.lastName ?? true,
+            firstName: result.data.duplicationCriteria?.firstName ?? true,
+            dateOfBirth: result.data.duplicationCriteria?.dateOfBirth ?? false,
+            zip: result.data.duplicationCriteria?.zip ?? false,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
   const handleCriteriaChange = (field) => {
     setCriteria((prev) => ({
       ...prev,
       [field]: !prev[field],
     }));
+  };
+
+  const handleSave = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tab: "PeopleDuplication",
+          userId,
+          data: {
+            peopleDuplicationEnabled: enabled,
+            duplicationCriteria: {
+              lastName: criteria.lastName,
+              firstName: criteria.firstName,
+              dateOfBirth: criteria.dateOfBirth,
+              zip: criteria.zip,
+            },
+          },
+        }),
+      });
+
+      const result = await res.json();
+
+      if (res.ok && result.errorCode === 0) {
+        Swal.fire("Saved", "Settings saved successfully!", "success");
+      } else {
+        Swal.fire("Error", result.errorMessage || "Failed to save", "error");
+      }
+    } catch (err) {
+      console.error("Save error:", err);
+      Swal.fire("Error", "Network error", "error");
+    }
   };
 
   return (
@@ -116,10 +187,16 @@ const PeopleDuplication = () => {
         </div>
 
         <div className="flex gap-2 mt-6">
-          <button className="px-4 py-2 bg-[#00ADE5] text-white rounded hover:bg-[#009acb] transition">
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-[#00ADE5] text-white rounded hover:bg-[#009acb] transition"
+          >
             Update
           </button>
-          <button className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition"
+          >
             Back
           </button>
         </div>
