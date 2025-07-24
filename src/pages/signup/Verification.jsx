@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import Swal from "sweetalert2";
 
 export default function Verification() {
   const navigate = useNavigate();
+  const { verifyOTP, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
 
@@ -15,11 +18,36 @@ export default function Verification() {
     setEmail(storedEmail);
   }, [navigate]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // For demo purposes, any 4-digit code will work
-    if (verificationCode.length === 4) {
+    
+    if (verificationCode.length !== 6) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Code",
+        text: "Please enter a valid 6-digit verification code.",
+      });
+      return;
+    }
+
+    try {
+      await verifyOTP(email, verificationCode);
+      
+      Swal.fire({
+        icon: "success",
+        title: "Email Verified",
+        text: "Your email has been successfully verified!",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      
       navigate("/signup/complete");
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Verification Failed",
+        text: error.message || "Invalid verification code. Please try again.",
+      });
     }
   };
 
@@ -54,22 +82,22 @@ export default function Verification() {
               </label>
               <input
                 type="text"
-                maxLength="4"
+                maxLength="6"
                 value={verificationCode}
                 onChange={(e) =>
                   setVerificationCode(e.target.value.replace(/\D/g, ""))
                 }
                 className="block w-32 mx-auto text-center border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
-                placeholder="1234"
+                placeholder="123456"
               />
             </div>
 
             <button
               type="submit"
-              disabled={verificationCode.length !== 4}
+              disabled={verificationCode.length !== 6 || loading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#003366] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5] disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              Verify
+              {loading ? "Verifying..." : "Verify"}
             </button>
           </form>
 

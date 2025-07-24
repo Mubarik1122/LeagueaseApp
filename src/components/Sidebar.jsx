@@ -15,6 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import clsx from "clsx";
+import { useAuth } from "../hooks/useAuth";
 
 const menuItems = [
   { icon: Trophy, label: "Admin Home", path: "/", highlight: true },
@@ -28,7 +29,12 @@ const menuItems = [
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user, logout } = useAuth();
 
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+  };
   return (
     <>
       <button
@@ -83,7 +89,9 @@ export default function Sidebar() {
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100"
             >
               <User size={20} className="text-gray-600" />
-              <span className="text-gray-700">John Doe</span>
+              <span className="text-gray-700">
+                {user ? `${user.firstName} ${user.lastName}` : "User"}
+              </span>
             </button>
 
             {showUserMenu && (
@@ -113,9 +121,7 @@ export default function Sidebar() {
                   <span>Help</span>
                 </NavLink>
                 <button
-                  onClick={() => {
-                    // Add logout logic
-                  }}
+                  onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-2 text-[#00ade5] hover:bg-gray-50"
                 >
                   <LogOut size={16} />

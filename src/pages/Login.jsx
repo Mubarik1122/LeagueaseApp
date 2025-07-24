@@ -2,37 +2,53 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import Swal from "sweetalert2";
+import { useAuth } from "../hooks/useAuth";
 
-export default function Login({ onLogin }) {
+export default function Login() {
   const navigate = useNavigate();
+  const { login, loading } = useAuth();
   const [formData, setFormData] = useState({
-    username: "",
+    identifier: "",
     password: "",
+    leagueId: "",
     rememberMe: false,
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Basic validation
-    if (!formData.username || !formData.password) {
+    if (!formData.identifier || !formData.password) {
       Swal.fire({
         icon: "warning",
         title: "Missing Fields",
-        text: "Please enter both username and password.",
+        text: "Please enter both identifier and password.",
       });
       return;
     }
 
-    // Dummy login check
-    if (formData.username === "admin" && formData.password === "admin") {
-      onLogin();
-      navigate("/");
-    } else {
+    try {
+      const response = await login(
+        formData.identifier, 
+        formData.password, 
+        formData.leagueId || null
+      );
+      
+      if (response.user) {
+        Swal.fire({
+          icon: "success",
+          title: "Login Successful",
+          text: `Welcome back, ${response.user.firstName}!`,
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        navigate("/");
+      }
+    } catch (error) {
       Swal.fire({
         icon: "error",
         title: "Login Failed",
-        text: "Invalid username or password",
+        text: error.message || "Invalid credentials",
       });
     }
   };
@@ -77,17 +93,17 @@ export default function Login({ onLogin }) {
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label
-                  htmlFor="username"
+                  htmlFor="identifier"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Username
+                  Username or Email
                 </label>
                 <input
-                  id="username"
-                  name="username"
+                  id="identifier"
+                  name="identifier"
                   type="text"
                   required
-                  value={formData.username}
+                  value={formData.identifier}
                   onChange={handleChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
                 />
@@ -108,6 +124,24 @@ export default function Login({ onLogin }) {
                   value={formData.password}
                   onChange={handleChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="leagueId"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  League ID (Optional)
+                </label>
+                <input
+                  id="leagueId"
+                  name="leagueId"
+                  type="text"
+                  value={formData.leagueId}
+                  onChange={handleChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
+                  placeholder="Enter league ID if required"
                 />
               </div>
 
@@ -133,9 +167,10 @@ export default function Login({ onLogin }) {
               <div>
                 <button
                   type="submit"
+                  disabled={loading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#002244] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
                 >
-                  Login
+                  {loading ? "Logging in..." : "Login"}
                 </button>
               </div>
             </form>

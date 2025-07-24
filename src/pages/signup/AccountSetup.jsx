@@ -1,20 +1,53 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import Swal from "sweetalert2";
 
 export default function AccountSetup() {
   const navigate = useNavigate();
+  const { requestOTP, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     language: "English (UK)",
     acceptTerms: false,
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Store email in localStorage for verification step
-    localStorage.setItem("signupEmail", formData.email);
-    navigate("/signup/verify");
+    
+    if (!formData.acceptTerms) {
+      Swal.fire({
+        icon: "warning",
+        title: "Terms Required",
+        text: "Please accept the terms and conditions to continue.",
+      });
+      return;
+    }
+
+    try {
+      await requestOTP(formData.email);
+      
+      // Store email in localStorage for verification step
+      localStorage.setItem("signupEmail", formData.email);
+      localStorage.setItem("signupLanguage", formData.language);
+      
+      Swal.fire({
+        icon: "success",
+        title: "OTP Sent",
+        text: "Please check your email for the verification code.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      
+      navigate("/signup/verify");
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed to Send OTP",
+        text: error.message || "Please try again.",
+      });
+    }
   };
 
   const handleChange = (e) => {
@@ -120,9 +153,10 @@ export default function AccountSetup() {
               <div>
                 <button
                   type="submit"
+                  disabled={loading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#003366] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
                 >
-                  Get Started
+                  {loading ? "Sending OTP..." : "Get Started"}
                 </button>
               </div>
             </form>

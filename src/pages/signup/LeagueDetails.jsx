@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import Swal from "sweetalert2";
 
 export default function LeagueDetails() {
   const navigate = useNavigate();
+  const { createLeague, loading } = useAuth();
   const [formData, setFormData] = useState({
     leagueName: "",
     country: "Pakistan",
@@ -12,10 +15,45 @@ export default function LeagueDetails() {
     seasonEndDate: "2025-09-22",
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    localStorage.setItem("leagueDetails", JSON.stringify(formData));
-    navigate("/signup/website-url");
+    
+    try {
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const sportName = localStorage.getItem("selectedSport") || "Football";
+      
+      const leagueData = {
+        email: userData.email,
+        leagueName: formData.leagueName,
+        country: formData.country,
+        seasonName: formData.seasonName,
+        seasonStartDate: formData.seasonStartDate,
+        seasonEndDate: formData.seasonEndDate,
+        sportName: sportName,
+        domainName: formData.leagueName.toLowerCase().replace(/\s+/g, ''),
+      };
+
+      const response = await createLeague(leagueData);
+      
+      // Store league data
+      localStorage.setItem("leagueDetails", JSON.stringify(response));
+      
+      Swal.fire({
+        icon: "success",
+        title: "League Created",
+        text: "Your league has been created successfully!",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      
+      navigate("/signup/website-url");
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed to Create League",
+        text: error.message || "Please try again.",
+      });
+    }
   };
 
   const handleChange = (e) => {
@@ -140,9 +178,10 @@ export default function LeagueDetails() {
               </button>
               <button
                 type="submit"
+                disabled={loading}
                 className="px-4 py-2 bg-[#003366] text-white rounded-md hover:bg-[#003366]"
               >
-                Next
+                {loading ? "Creating League..." : "Next"}
               </button>
             </div>
           </form>
