@@ -15,7 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import clsx from "clsx";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth.jsx";
 
 const menuItems = [
   { icon: Trophy, label: "Admin Home", path: "/", highlight: true },

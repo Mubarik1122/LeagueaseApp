@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth.jsx";
 import Swal from "sweetalert2";
 
 export default function Verification() {

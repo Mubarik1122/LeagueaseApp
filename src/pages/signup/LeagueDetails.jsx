@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth.jsx";
 import Swal from "sweetalert2";
 
 export default function LeagueDetails() {

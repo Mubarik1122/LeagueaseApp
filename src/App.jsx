@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { AuthProvider } from "./hooks/useAuth";
-import { useAuth } from "./hooks/useAuth";
+import { AuthProvider } from "./hooks/useAuth.jsx";
+import { useAuth } from "./hooks/useAuth.jsx";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import Home from "./pages/Home";
