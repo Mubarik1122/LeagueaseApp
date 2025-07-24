@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth.jsx";
+import { testApiConnection } from "../../config/api.js";
 import Swal from "sweetalert2";
 
 export default function AccountSetup() {
@@ -25,6 +26,17 @@ export default function AccountSetup() {
       return;
     }
 
+    // Test API connection first
+    const isConnected = await testApiConnection();
+    if (!isConnected) {
+      Swal.fire({
+        icon: "error",
+        title: "Connection Error",
+        text: "Unable to connect to the server. Please check your internet connection and try again.",
+      });
+      return;
+    }
+
     try {
       await requestOTP(formData.email);
       
@@ -42,10 +54,11 @@ export default function AccountSetup() {
       
       navigate("/signup/verify");
     } catch (error) {
+      console.error('OTP request error:', error);
       Swal.fire({
         icon: "error",
         title: "Failed to Send OTP",
-        text: error.message || "Please try again.",
+        text: error.message || "Unable to send OTP. Please try again.",
       });
     }
   };

@@ -1,6 +1,24 @@
 // API Configuration
 const API_BASE_URL = 'https://leagueaseappbackend-production.up.railway.app/api';
 
+// Verify API connectivity
+export const testApiConnection = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('API connection test failed:', error);
+    return false;
+  }
+};
+
 // API endpoints
 export const API_ENDPOINTS = {
   // Auth endpoints

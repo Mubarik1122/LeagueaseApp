@@ -37,6 +37,8 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const config = {
       headers: this.getAuthHeaders(),
+      mode: 'cors',
+      credentials: 'omit',
       ...options,
     };
 
@@ -45,7 +47,7 @@ class ApiService {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const contentType = response.headers.get('content-type');
@@ -55,7 +57,21 @@ class ApiService {
       
       return await response.text();
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('API request failed:', {
+        url,
+        error: error.message,
+        config
+      });
+      
+      // Provide more specific error messages
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Unable to connect to the server. Please check your internet connection and try again.');
+      }
+      
+      if (error.message.includes('CORS')) {
+        throw new Error('Cross-origin request blocked. Please contact support.');
+      }
+      
       throw error;
     }
   }
