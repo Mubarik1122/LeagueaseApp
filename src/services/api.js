@@ -12,7 +12,13 @@ const getAuthHeaders = () => {
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (error) {
+    // Handle cases where response is not JSON
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+  }
   
   if (!response.ok) {
     throw new Error(data.errorMessage || 'API request failed');
@@ -21,81 +27,84 @@ const handleResponse = async (response) => {
   return data;
 };
 
+// Helper function to make API requests with better error handling
+const makeRequest = async (url, options = {}) => {
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      throw new Error('Network error: Unable to connect to the server. Please check your internet connection or try again later.');
+    }
+    throw error;
+  }
+};
+
 // Auth API functions
 export const authAPI = {
   requestOTP: async (email) => {
-    const response = await fetch(`${API_BASE_URL}/auth/request-otp`, {
+    return await makeRequest(`${API_BASE_URL}/auth/request-otp`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    return handleResponse(response);
   },
 
   verifyOTP: async (email, otp) => {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+    return await makeRequest(`${API_BASE_URL}/auth/verify-otp`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp }),
     });
-    return handleResponse(response);
   },
 
   verifyUsername: async (username) => {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-username`, {
+    return await makeRequest(`${API_BASE_URL}/auth/verify-username`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username }),
     });
-    return handleResponse(response);
   },
 
   signup: async (userData) => {
-    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+    return await makeRequest(`${API_BASE_URL}/auth/signup`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
     });
-    return handleResponse(response);
   },
 
   login: async (identifier, password, leagueId = null) => {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    return await makeRequest(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, password, leagueId }),
     });
-    return handleResponse(response);
   },
 
   forgotPassword: async (email, newPassword) => {
-    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+    return await makeRequest(`${API_BASE_URL}/auth/forgot-password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, newPassword }),
     });
-    return handleResponse(response);
   },
 
   createLeague: async (leagueData) => {
-    const response = await fetch(`${API_BASE_URL}/auth/create-league`, {
+    return await makeRequest(`${API_BASE_URL}/auth/create-league`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(leagueData),
     });
-    return handleResponse(response);
   },
 };
 
 // League API functions
 export const leagueAPI = {
   getLeagueByIdentifier: async (identifier) => {
-    const response = await fetch(`${API_BASE_URL}/leaguease/get-leaguease-by-identifier`, {
+    return await makeRequest(`${API_BASE_URL}/leaguease/get-leaguease-by-identifier`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier }),
     });
-    return handleResponse(response);
   },
 };
 

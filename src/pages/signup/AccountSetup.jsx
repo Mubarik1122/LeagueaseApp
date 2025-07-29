@@ -117,8 +117,9 @@ export default function AccountSetup() {
       console.error("OTP Request Error:", err);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Something went wrong. Please try again later.",
+        title: "Connection Error",
+        text: err.message || "Unable to connect to the server. Please check your internet connection and try again.",
+        footer: "If the problem persists, please contact support.",
       });
     }
   };
