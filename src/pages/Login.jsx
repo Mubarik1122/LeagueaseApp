@@ -4,11 +4,13 @@ import { Trophy } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Swal from "sweetalert2";
 import CryptoJS from "crypto-js";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Login({ onLogin }) {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -79,35 +81,20 @@ export default function Login({ onLogin }) {
     if (!valid) return;
 
     try {
-      const res = await fetch(`${BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          identifier: formData.username,
-          password: formData.password,
-        }),
-      });
-
-      const result = await res.json();
-
-      if (result.errorCode === 0) {
+      const result = await login(formData.username, formData.password);
+      
+      if (result.success) {
         const { token, user } = result.data;
 
         if (formData.rememberMe) {
           const encryptedPassword = CryptoJS.AES.encrypt(formData.password, ENCRYPTION_KEY).toString();
 
           localStorage.setItem("rememberMe", "true");
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(user));
           localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString()); // 24 hours
           localStorage.setItem("Username", formData.username);
           localStorage.setItem("Key", encryptedPassword);
         } else {
           localStorage.removeItem("rememberMe");
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(user));
           localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString()); // 24 hours
           localStorage.removeItem("Username");
           localStorage.removeItem("Key");
@@ -119,7 +106,7 @@ export default function Login({ onLogin }) {
         Swal.fire({
           icon: "error",
           title: "Login Failed",
-          text: result.errorMessage || "Invalid credentials.",
+          text: result.error || "Invalid credentials.",
         });
       }
     } catch (error) {
