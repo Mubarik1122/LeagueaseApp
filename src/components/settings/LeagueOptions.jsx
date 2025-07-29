@@ -52,7 +52,7 @@ export default function LeagueOptions() {
     const fetchSettings = async () => {
       const token = localStorage.getItem("token");
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -120,7 +120,7 @@ export default function LeagueOptions() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings/save`,
+        `${import.meta.env.VITE_API_BASE_URL}/settings/save`,
         {
           method: "POST",
           headers: {

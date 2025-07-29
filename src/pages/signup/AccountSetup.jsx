@@ -117,9 +117,8 @@ export default function AccountSetup() {
       console.error("OTP Request Error:", err);
       Swal.fire({
         icon: "error",
-        title: "Connection Error",
-        text: err.message || "Unable to connect to the server. Please check your internet connection and try again.",
-        footer: "If the problem persists, please contact support.",
+        title: "Unexpected Error",
+        text: "Something went wrong. Please try again later.",
       });
     }
   };
@@ -165,7 +164,7 @@ export default function AccountSetup() {
                 const top = (window.innerHeight - height) / 2;
 
                 const popup = window.open(
-                  `${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/auth/google`,
+                  `${import.meta.env.VITE_API_BASE_URL}/auth/google`,
                   'GoogleSignIn',
                   `width=${width},height=${height},top=${top},left=${left}`
                 );

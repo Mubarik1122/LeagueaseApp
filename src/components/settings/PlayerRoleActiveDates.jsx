@@ -13,7 +13,7 @@ const PlayerRoleActiveDates = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -37,7 +37,7 @@ const PlayerRoleActiveDates = () => {
   // ✅ Save handler
   const handleSave = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings/save`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

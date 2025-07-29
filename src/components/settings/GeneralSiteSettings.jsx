@@ -29,7 +29,7 @@ const GeneralSiteSettings = () => {
       const token = localStorage.getItem("token");
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -76,7 +76,7 @@ const GeneralSiteSettings = () => {
     const userId = user?.userId;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings/save`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
