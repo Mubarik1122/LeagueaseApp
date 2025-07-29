@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import { authAPI } from "../../services/api";
 
 export default function AccountSetup() {
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -82,7 +83,15 @@ export default function AccountSetup() {
     localStorage.setItem("signupEmail", formData.email);
 
     try {
-      const result = await authAPI.requestOTP(formData.email);
+      const response = await fetch(`${BASE_URL}/auth/request-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const result = await response.json();
 
       if (result.errorCode === 1) {
         Swal.fire({
@@ -164,7 +173,7 @@ export default function AccountSetup() {
                 const top = (window.innerHeight - height) / 2;
 
                 const popup = window.open(
-                  `${import.meta.env.VITE_API_BASE_URL}/auth/google`,
+                  `${BASE_URL}/auth/google`,
                   'GoogleSignIn',
                   `width=${width},height=${height},top=${top},left=${left}`
                 );

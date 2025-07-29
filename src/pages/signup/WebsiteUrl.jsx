@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Globe } from "lucide-react";
 import Swal from "sweetalert2";
-import { authAPI } from "../../services/api";
 
 export default function WebsiteUrl() {
   const navigate = useNavigate();
   const [urlType, setUrlType] = useState("suggestion");
   const [customUrl, setCustomUrl] = useState("");
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,9 +43,18 @@ export default function WebsiteUrl() {
     };
 
     try {
-      const result = await authAPI.createLeague(payload);
+      const response = await fetch(`${BASE_URL}/auth/create-league`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-      if (result.errorCode === 0) {
+      const result = await response.json();
+
+      if (response.ok) {
         localStorage.removeItem("leagueDetails");
         localStorage.removeItem("selectedSport");
         localStorage.removeItem("websiteUrl");
@@ -60,7 +69,7 @@ export default function WebsiteUrl() {
           navigate("/login");
         });
       } else {
-        alert(result.errorMessage || "Something went wrong!");
+        alert(result.error || "Something went wrong!");
       }
     } catch (error) {
       console.error("API Error:", error);
