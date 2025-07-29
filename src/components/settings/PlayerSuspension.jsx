@@ -17,7 +17,7 @@ const PlayerSuspension = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -51,7 +51,7 @@ const PlayerSuspension = () => {
 
   const handleSave = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings/save`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

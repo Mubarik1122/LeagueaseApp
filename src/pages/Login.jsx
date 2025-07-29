@@ -7,7 +7,7 @@ import CryptoJS from "crypto-js";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Login({ onLogin }) {
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app';
   const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
   const navigate = useNavigate();
   const { login } = useAuth();

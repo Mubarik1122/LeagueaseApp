@@ -17,7 +17,7 @@ export default function FacebookSettings() {
 
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/settings`,
+          `${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -55,7 +55,7 @@ export default function FacebookSettings() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/settings/save`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings/save`,
         {
           method: "POST",
           headers: {

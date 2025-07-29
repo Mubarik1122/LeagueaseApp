@@ -18,7 +18,7 @@ export default function Terminology() {
       const token = localStorage.getItem("token");
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -52,7 +52,7 @@ export default function Terminology() {
     const userId = user?.userId;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings/save`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/settings/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -164,7 +164,7 @@ export default function AccountSetup() {
                 const top = (window.innerHeight - height) / 2;
 
                 const popup = window.open(
-                  `${import.meta.env.VITE_API_BASE_URL}/auth/google`,
+                  `${import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app'}/auth/google`,
                   'GoogleSignIn',
                   `width=${width},height=${height},top=${top},left=${left}`
                 );
