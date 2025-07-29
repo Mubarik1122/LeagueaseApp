@@ -1,18 +1,27 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { ChevronDown, Search } from "lucide-react";
 
 export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const goToDashboard = () => {
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen">
       {/* Top Bar */}
       <div className="bg-[#f8fafc] py-1 px-4">
         <div className="max-w-7xl mx-auto flex justify-end space-x-4 text-sm">
-          <a href="#" className="text-[#00ADE5] hover:opacity-80">
-            Top Sites
-          </a>
-          <a href="#" className="text-[#00ADE5] hover:opacity-80">
-            Help Centre
-          </a>
+          <a href="#" className="text-[#00ADE5] hover:opacity-80">Top Sites</a>
+          <a href="#" className="text-[#00ADE5] hover:opacity-80">Help Centre</a>
           <div className="flex items-center">
             <span className="text-[#00ADE5]">EN</span>
             <ChevronDown className="h-4 w-4 text-[#00ADE5]" />
@@ -26,23 +35,17 @@ export default function Home() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center">
-                <img
-                  src="\image\logo\3.png"
-                  alt="Leaguease Logo"
-                  className="h-16 w-100"
-                />
+                <img src="/image/logo/3.png" alt="Leaguease Logo" className="h-16 w-100" />
               </Link>
               <div className="hidden md:flex ml-10 space-x-8">
                 <div className="relative group">
                   <button className="flex items-center text-black hover:text-[#00ADE5]">
-                    Sports
-                    <ChevronDown className="ml-1 h-4 w-4" />
+                    Sports <ChevronDown className="ml-1 h-4 w-4" />
                   </button>
                 </div>
                 <div className="relative group">
                   <button className="flex items-center text-black hover:text-[#00ADE5]">
-                    Features
-                    <ChevronDown className="ml-1 h-4 w-4" />
+                    Features <ChevronDown className="ml-1 h-4 w-4" />
                   </button>
                 </div>
                 <Link to="/pricing" className="text-black hover:text-[#00ADE5]">
@@ -50,6 +53,7 @@ export default function Home() {
                 </Link>
               </div>
             </div>
+
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -59,18 +63,24 @@ export default function Home() {
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#00ADE5] focus:border-[#00ADE5]"
                 />
               </div>
-              <Link
-                to="/login"
-                className="text-black hover:text-[#00ADE5] px-3 py-2 text-sm font-medium"
-              >
-                Log In
-              </Link>
-              <Link
-                to="/signup"
-                className="bg-[#003366] text-white px-4 py-2 rounded-full text-sm font-medium hover:opacity-90"
-              >
-                Sign Up
-              </Link>
+
+              {!isLoggedIn ? (
+                <>
+                  <Link to="/login" className="text-black hover:text-[#00ADE5] px-3 py-2 text-sm font-medium">
+                    Log In
+                  </Link>
+                  <Link to="/signup" className="bg-[#003366] text-white px-4 py-2 rounded-full text-sm font-medium hover:opacity-90">
+                    Sign Up
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={goToDashboard}
+                  className="text-black hover:text-[#00ADE5] px-3 py-2 text-sm font-medium"
+                >
+                  Dashboard
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -85,16 +95,10 @@ export default function Home() {
                 <div>
                   <h1 className="text-4xl tracking-tight font-bold text-black sm:text-5xl md:text-6xl">
                     <span className="block">The easiest place to</span>
-                    <span className="block text-[#00ADE5]">
-                      run your sports league
-                    </span>
+                    <span className="block text-[#00ADE5]">run your sports league</span>
                   </h1>
                   <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                    Sports organiser - the solution for organising and managing
-                    leagues, with a user-friendly interface and features
-                    including league management system, online scheduler,
-                    results tracking, player registrations, and a professional
-                    website.
+                    Sports organiser - the solution for organising and managing leagues, with a user-friendly interface and features including league management system, online scheduler, results tracking, player registrations, and a professional website.
                   </p>
                   <div className="mt-5 sm:mt-8 sm:flex lg:justify-start">
                     <div className="rounded-md shadow">
@@ -111,9 +115,7 @@ export default function Home() {
                       </button>
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-gray-500">
-                    No credit card required
-                  </p>
+                  <p className="mt-3 text-sm text-gray-500">No credit card required</p>
                 </div>
                 <div className="hidden lg:block">
                   <img

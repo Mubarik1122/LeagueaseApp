@@ -1,107 +1,91 @@
-import React, { useState } from "react";
-import Swal from "sweetalert2"; // Import SweetAlert2 for success alerts
+import React, { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
 export default function TwitterSettings() {
-  // State for the form inputs
-  const [apiKey, setApiKey] = useState("");
-  const [apiSecret, setApiSecret] = useState("");
-  const [accessToken, setAccessToken] = useState("");
-  const [accessTokenSecret, setAccessTokenSecret] = useState("");
-  const [autoTweetMatchResults, setAutoTweetMatchResults] = useState(false);
-  const [includeHashtags, setIncludeHashtags] = useState(false);
-  const [tweetTournamentUpdates, setTweetTournamentUpdates] = useState(false);
-  const [defaultHashtags, setDefaultHashtags] = useState("");
-
-  // State for error messages
-  const [errors, setErrors] = useState({
+  const [formData, setFormData] = useState({
     apiKey: "",
     apiSecret: "",
     accessToken: "",
     accessTokenSecret: "",
+    autoTweetMatchResults: false,
+    includeHashtags: false,
+    tweetTournamentUpdates: false,
+    defaultHashtags: "",
   });
 
-  // Form validation function
-  const validateForm = () => {
-    const newErrors = {};
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const token = localStorage.getItem("token");
 
-    // Validate API Key
-    if (!apiKey) {
-      newErrors.apiKey = "API Key is required.";
-    }
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-    // Validate API Secret
-    if (!apiSecret) {
-      newErrors.apiSecret = "API Secret is required.";
-    }
+        const result = await response.json();
 
-    // Validate Access Token
-    if (!accessToken) {
-      newErrors.accessToken = "Access Token is required.";
-    }
+        if (result.errorCode === 0 && result.data?.twitterSettings) {
+          setFormData({ ...formData, ...result.data.twitterSettings });
+        } else {
+          console.warn("Failed to fetch Twitter settings:", result.errorMessage);
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    };
 
-    // Validate Access Token Secret
-    if (!accessTokenSecret) {
-      newErrors.accessTokenSecret = "Access Token Secret is required.";
-    }
+    fetchSettings();
+  }, []);
 
-    // If there are any errors, return false, otherwise return true
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return false;
-    }
-
-    // Clear previous errors if everything is valid
-    setErrors({});
-    return true;
+  const handleChange = (e) => {
+    const { name, type, checked, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
-  // Form submission handler
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userId = user?.userId;
 
-    // Validate form before submitting
-    if (validateForm()) {
-      // You can process the form data here
-      const settings = {
-        apiKey,
-        apiSecret,
-        accessToken,
-        accessTokenSecret,
-        autoTweetMatchResults,
-        includeHashtags,
-        tweetTournamentUpdates,
-        defaultHashtags,
-      };
-      console.log(settings); // Here you would save the settings (e.g., API call)
-
-      // Show the success message using SweetAlert
-      Swal.fire({
-        title: "Settings Saved!",
-        text: "Your Twitter settings have been saved successfully.",
-        icon: "success",
-        confirmButtonText: "OK",
-        timer: 3000, // Auto-close after 3 seconds
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tab: "TwitterSettings",
+          userId,
+          data: {
+            twitterSettings: formData,
+          },
+        }),
       });
 
-      // Reset the form after saving (reload the component state)
-      setApiKey("");
-      setApiSecret("");
-      setAccessToken("");
-      setAccessTokenSecret("");
-      setAutoTweetMatchResults(false);
-      setIncludeHashtags(false);
-      setTweetTournamentUpdates(false);
-      setDefaultHashtags("");
-    }
-  };
+      const result = await response.json();
 
-  // Input field style logic to dynamically add red or green border
-  const getInputClassName = (fieldName) => {
-    return `w-full px-3 py-2 border ${
-      errors[fieldName] ? "border-blue-500" : "border-gray-300"
-    } rounded-md focus:outline-none focus:ring-2 ${
-      errors[fieldName] ? "focus:ring-red-500" : "focus:ring-green-500"
-    }`;
+      if (response.ok && result.errorCode === 0) {
+        Swal.fire({
+          title: "Twitter Settings Saved!",
+          text: "Your settings have been saved successfully.",
+          icon: "success",
+          confirmButtonText: "OK",
+          timer: 3000,
+        });
+      } else {
+        Swal.fire("Failed", result.errorMessage || "Save failed.", "error");
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      Swal.fire("Error", "Network error while saving.", "error");
+    }
   };
 
   return (
@@ -119,14 +103,12 @@ export default function TwitterSettings() {
             </label>
             <input
               type="text"
-              className={getInputClassName("apiKey")}
+              name="apiKey"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Enter Twitter API Key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              value={formData.apiKey}
+              onChange={handleChange}
             />
-            {errors.apiKey && (
-              <p className="text-sm text-red-500 mt-1">{errors.apiKey}</p>
-            )}
           </div>
 
           {/* API Secret */}
@@ -136,14 +118,12 @@ export default function TwitterSettings() {
             </label>
             <input
               type="password"
-              className={getInputClassName("apiSecret")}
+              name="apiSecret"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Enter Twitter API Secret"
-              value={apiSecret}
-              onChange={(e) => setApiSecret(e.target.value)}
+              value={formData.apiSecret}
+              onChange={handleChange}
             />
-            {errors.apiSecret && (
-              <p className="text-sm text-red-500 mt-1">{errors.apiSecret}</p>
-            )}
           </div>
 
           {/* Access Token */}
@@ -153,14 +133,12 @@ export default function TwitterSettings() {
             </label>
             <input
               type="text"
-              className={getInputClassName("accessToken")}
+              name="accessToken"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Enter Access Token"
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
+              value={formData.accessToken}
+              onChange={handleChange}
             />
-            {errors.accessToken && (
-              <p className="text-sm text-red-500 mt-1">{errors.accessToken}</p>
-            )}
           </div>
 
           {/* Access Token Secret */}
@@ -170,16 +148,12 @@ export default function TwitterSettings() {
             </label>
             <input
               type="password"
-              className={getInputClassName("accessTokenSecret")}
+              name="accessTokenSecret"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Enter Access Token Secret"
-              value={accessTokenSecret}
-              onChange={(e) => setAccessTokenSecret(e.target.value)}
+              value={formData.accessTokenSecret}
+              onChange={handleChange}
             />
-            {errors.accessTokenSecret && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors.accessTokenSecret}
-              </p>
-            )}
           </div>
 
           {/* Tweet Options */}
@@ -191,11 +165,10 @@ export default function TwitterSettings() {
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
-                  checked={autoTweetMatchResults}
-                  onChange={() =>
-                    setAutoTweetMatchResults(!autoTweetMatchResults)
-                  }
+                  name="autoTweetMatchResults"
+                  checked={formData.autoTweetMatchResults}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600"
                 />
                 <span className="text-sm text-gray-600">
                   Auto-tweet match results
@@ -204,9 +177,10 @@ export default function TwitterSettings() {
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
-                  checked={includeHashtags}
-                  onChange={() => setIncludeHashtags(!includeHashtags)}
+                  name="includeHashtags"
+                  checked={formData.includeHashtags}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600"
                 />
                 <span className="text-sm text-gray-600">
                   Include team hashtags
@@ -215,11 +189,10 @@ export default function TwitterSettings() {
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
-                  checked={tweetTournamentUpdates}
-                  onChange={() =>
-                    setTweetTournamentUpdates(!tweetTournamentUpdates)
-                  }
+                  name="tweetTournamentUpdates"
+                  checked={formData.tweetTournamentUpdates}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600"
                 />
                 <span className="text-sm text-gray-600">
                   Tweet tournament updates
@@ -235,17 +208,18 @@ export default function TwitterSettings() {
             </label>
             <input
               type="text"
-              className={getInputClassName("defaultHashtags")}
+              name="defaultHashtags"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="#sports #tournament"
-              value={defaultHashtags}
-              onChange={(e) => setDefaultHashtags(e.target.value)}
+              value={formData.defaultHashtags}
+              onChange={handleChange}
             />
             <p className="mt-1 text-sm text-gray-500">
               Separate hashtags with spaces
             </p>
           </div>
 
-          {/* Information Banner */}
+          {/* Info Alert */}
           <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -263,8 +237,7 @@ export default function TwitterSettings() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-red-700">
-                  Ensure your Twitter Developer Account is approved for elevated
-                  access.
+                  Ensure your Twitter Developer Account is approved for elevated access.
                 </p>
               </div>
             </div>
@@ -274,13 +247,25 @@ export default function TwitterSettings() {
           <div className="flex gap-4">
             <button
               type="submit"
-              className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#003366]0"
+              className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#002244]"
             >
               Save Settings
             </button>
             <button
               type="button"
               className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              onClick={() =>
+                setFormData({
+                  apiKey: "",
+                  apiSecret: "",
+                  accessToken: "",
+                  accessTokenSecret: "",
+                  autoTweetMatchResults: false,
+                  includeHashtags: false,
+                  tweetTournamentUpdates: false,
+                  defaultHashtags: "",
+                })
+              }
             >
               Cancel
             </button>

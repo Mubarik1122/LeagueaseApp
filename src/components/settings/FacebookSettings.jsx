@@ -1,97 +1,94 @@
-import React, { useState } from "react";
-import Swal from "sweetalert2"; // Import SweetAlert2 for success alerts
+import React, { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
 export default function FacebookSettings() {
-  // State for the form inputs
-  const [facebookAppId, setFacebookAppId] = useState("");
-  const [facebookAppSecret, setFacebookAppSecret] = useState("");
-  const [pageId, setPageId] = useState("");
-  const [autoPostMatchResults, setAutoPostMatchResults] = useState(false);
-  const [autoPostTournamentUpdates, setAutoPostTournamentUpdates] =
-    useState(false);
-  const [includeTeamStandings, setIncludeTeamStandings] = useState(false);
-
-  // State for error messages
-  const [errors, setErrors] = useState({
+  const [formData, setFormData] = useState({
     facebookAppId: "",
     facebookAppSecret: "",
     pageId: "",
+    autoPostMatchResults: false,
+    autoPostTournamentUpdates: false,
+    includeTeamStandings: false,
   });
 
-  // Form validation function
-  const validateForm = () => {
-    const newErrors = {};
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const token = localStorage.getItem("token");
 
-    // Validate Facebook App ID
-    if (!facebookAppId) {
-      newErrors.facebookAppId = "Facebook App ID is required.";
-    }
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/settings`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const result = await response.json();
 
-    // Validate Facebook App Secret
-    if (!facebookAppSecret) {
-      newErrors.facebookAppSecret = "Facebook App Secret is required.";
-    }
+        if (result.errorCode === 0 && result.data?.facebookSettings) {
+          setFormData({ ...formData, ...result.data.facebookSettings });
+        } else {
+          console.warn("Failed to fetch Facebook settings:", result.errorMessage);
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    };
 
-    // Validate Page ID
-    if (!pageId) {
-      newErrors.pageId = "Page ID is required.";
-    }
+    fetchSettings();
+  }, []);
 
-    // If there are any errors, return false, otherwise return true
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return false;
-    }
-
-    // Clear previous errors if everything is valid
-    setErrors({});
-    return true;
+  const handleChange = (e) => {
+    const { name, type, value, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
-  // Form submission handler
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userId = user?.userId;
 
-    // Validate form before submitting
-    if (validateForm()) {
-      // You can process the form data here
-      const settings = {
-        facebookAppId,
-        facebookAppSecret,
-        pageId,
-        autoPostMatchResults,
-        autoPostTournamentUpdates,
-        includeTeamStandings,
-      };
-      console.log(settings);
-      // Save settings logic (e.g., API call, localStorage, etc.)
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/settings/save`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            tab: "FacebookSettings",
+            userId,
+            data: {
+              facebookSettings: formData,
+            },
+          }),
+        }
+      );
 
-      // After saving, show the success message using SweetAlert
-      Swal.fire({
-        title: "Facebook Settings Saved!",
-        text: "Your settings have been saved successfully.",
-        icon: "success",
-        confirmButtonText: "OK",
-        timer: 3000, // Auto-close after 3 seconds
-      });
+      const result = await response.json();
 
-      // Optionally reset the form after saving
-      setFacebookAppId("");
-      setFacebookAppSecret("");
-      setPageId("");
-      setAutoPostMatchResults(false);
-      setAutoPostTournamentUpdates(false);
-      setIncludeTeamStandings(false);
+      if (response.ok && result.errorCode === 0) {
+        Swal.fire({
+          title: "Facebook Settings Saved!",
+          text: "Your settings have been saved successfully.",
+          icon: "success",
+          confirmButtonText: "OK",
+          timer: 3000,
+        });
+      } else {
+        Swal.fire("Failed", result.errorMessage || "Save failed.", "error");
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      Swal.fire("Error", "Network error while saving.", "error");
     }
-  };
-
-  // Input field style logic to add green outline when errors are fixed
-  const getInputClassName = (fieldName) => {
-    return `w-full px-3 py-2 border ${
-      errors[fieldName] ? "border-blue-500" : "border-gray-300"
-    } rounded-md focus:outline-none focus:ring-2 ${
-      errors[fieldName] ? "focus:ring-red-500" : "focus:ring-green-500"
-    }`;
   };
 
   return (
@@ -109,16 +106,12 @@ export default function FacebookSettings() {
             </label>
             <input
               type="text"
-              className={getInputClassName("facebookAppId")}
+              name="facebookAppId"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Enter Facebook App ID"
-              value={facebookAppId}
-              onChange={(e) => setFacebookAppId(e.target.value)}
+              value={formData.facebookAppId}
+              onChange={handleChange}
             />
-            {errors.facebookAppId && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors.facebookAppId}
-              </p>
-            )}
           </div>
 
           {/* Facebook App Secret */}
@@ -128,16 +121,12 @@ export default function FacebookSettings() {
             </label>
             <input
               type="password"
-              className={getInputClassName("facebookAppSecret")}
+              name="facebookAppSecret"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Enter Facebook App Secret"
-              value={facebookAppSecret}
-              onChange={(e) => setFacebookAppSecret(e.target.value)}
+              value={formData.facebookAppSecret}
+              onChange={handleChange}
             />
-            {errors.facebookAppSecret && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors.facebookAppSecret}
-              </p>
-            )}
           </div>
 
           {/* Page ID */}
@@ -147,65 +136,58 @@ export default function FacebookSettings() {
             </label>
             <input
               type="text"
-              className={getInputClassName("pageId")}
+              name="pageId"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Enter Facebook Page ID"
-              value={pageId}
-              onChange={(e) => setPageId(e.target.value)}
+              value={formData.pageId}
+              onChange={handleChange}
             />
-            {errors.pageId && (
-              <p className="text-sm text-red-500 mt-1">{errors.pageId}</p>
-            )}
           </div>
 
-          {/* Posting Options */}
+          {/* Checkboxes */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Posting Options
             </label>
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
-                  checked={autoPostMatchResults}
-                  onChange={() =>
-                    setAutoPostMatchResults(!autoPostMatchResults)
-                  }
-                />
-                <span className="text-sm text-gray-600">
-                  Auto-post match results
-                </span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
-                  checked={autoPostTournamentUpdates}
-                  onChange={() =>
-                    setAutoPostTournamentUpdates(!autoPostTournamentUpdates)
-                  }
-                />
-                <span className="text-sm text-gray-600">
-                  Auto-post tournament updates
-                </span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
-                  checked={includeTeamStandings}
-                  onChange={() =>
-                    setIncludeTeamStandings(!includeTeamStandings)
-                  }
-                />
-                <span className="text-sm text-gray-600">
-                  Include team standings
-                </span>
-              </label>
-            </div>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                name="autoPostMatchResults"
+                checked={formData.autoPostMatchResults}
+                onChange={handleChange}
+                className="rounded border-gray-300 text-blue-600"
+              />
+              <span className="text-sm text-gray-600">
+                Auto-post match results
+              </span>
+            </label>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                name="autoPostTournamentUpdates"
+                checked={formData.autoPostTournamentUpdates}
+                onChange={handleChange}
+                className="rounded border-gray-300 text-blue-600"
+              />
+              <span className="text-sm text-gray-600">
+                Auto-post tournament updates
+              </span>
+            </label>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                name="includeTeamStandings"
+                checked={formData.includeTeamStandings}
+                onChange={handleChange}
+                className="rounded border-gray-300 text-blue-600"
+              />
+              <span className="text-sm text-gray-600">
+                Include team standings
+              </span>
+            </label>
           </div>
 
-          {/* Information Banner */}
+          {/* Info Alert */}
           <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -234,13 +216,23 @@ export default function FacebookSettings() {
           <div className="flex gap-4">
             <button
               type="submit"
-              className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#003366]0"
+              className="px-4 py-2 bg-[#003366] text-white rounded hover:bg-[#002244]"
             >
               Save Settings
             </button>
             <button
               type="button"
               className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              onClick={() =>
+                setFormData({
+                  facebookAppId: "",
+                  facebookAppSecret: "",
+                  pageId: "",
+                  autoPostMatchResults: false,
+                  autoPostTournamentUpdates: false,
+                  includeTeamStandings: false,
+                })
+              }
             >
               Cancel
             </button>

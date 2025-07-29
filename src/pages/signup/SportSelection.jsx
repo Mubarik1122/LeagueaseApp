@@ -84,7 +84,7 @@ export default function SportSelection() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Step 2 of 5</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Step 2 of 4</h2>
           <p className="mt-2 text-xl text-gray-600">Select your sport</p>
         </div>
 

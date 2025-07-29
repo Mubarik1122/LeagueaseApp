@@ -1,18 +1,80 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Globe } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function WebsiteUrl() {
   const navigate = useNavigate();
   const [urlType, setUrlType] = useState("suggestion");
   const [customUrl, setCustomUrl] = useState("");
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const selectedUrl =
-      urlType === "suggestion" ? "4sovtournament2" : customUrl;
-    localStorage.setItem("websiteUrl", selectedUrl);
-    navigate("/signup/subscription");
+
+    const email = localStorage.getItem("signupEmail");
+    const leagueDetails = JSON.parse(localStorage.getItem("leagueDetails") || "{}");
+    const selectedSport = localStorage.getItem("selectedSport");
+
+    const requiredFields = [
+      "leagueName",
+      "country",
+      "seasonName",
+      "seasonStartDate",
+      "seasonEndDate",
+    ];
+
+    const missingFields = requiredFields.filter((field) => !leagueDetails[field]);
+    if (!selectedSport) missingFields.push("sportName");
+    if (!email) missingFields.push("email");
+
+    if (missingFields.length > 0) {
+      alert(`Missing required fields: ${missingFields.join(", ")}`);
+      return;
+    }
+
+    const selectedUrl = urlType === "suggestion" ? "4sovtournament2" : customUrl.trim();
+
+    const payload = {
+      email,
+      ...leagueDetails,
+      sportName: selectedSport,
+      domainName: selectedUrl || null,
+    };
+
+    try {
+      const response = await fetch(`${BASE_URL}/auth/create-league`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        localStorage.removeItem("leagueDetails");
+        localStorage.removeItem("selectedSport");
+        localStorage.removeItem("websiteUrl");
+        localStorage.removeItem("signupEmail");
+
+        Swal.fire({
+          icon: "success",
+          title: "League created successfully!",
+          confirmButtonText: "Go to Login",
+          confirmButtonColor: "#003366",
+        }).then(() => {
+          navigate("/login");
+        });
+      } else {
+        alert(result.error || "Something went wrong!");
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      alert("An error occurred.");
+    }
   };
 
   return (
@@ -24,7 +86,7 @@ export default function WebsiteUrl() {
               <Globe className="h-8 w-8 text-[#00ADE5]" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Step 4 of 5</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Step 4 of 4</h2>
           <p className="mt-2 text-gray-600">Choose league website address</p>
         </div>
 
@@ -87,9 +149,9 @@ export default function WebsiteUrl() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-[#003366] text-white rounded-md hover:bg-[#003366]"
+                className="px-4 py-2 bg-[#003366] text-white rounded-md hover:bg-[#002244]"
               >
-                Next
+                Save
               </button>
             </div>
           </form>

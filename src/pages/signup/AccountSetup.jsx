@@ -1,64 +1,132 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
-import { useAuth } from "../../hooks/useAuth.jsx";
-import { testApiConnection } from "../../config/api.js";
 import Swal from "sweetalert2";
 
 export default function AccountSetup() {
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
-  const { requestOTP, loading } = useAuth();
+
   const [formData, setFormData] = useState({
     email: "",
-    language: "English (UK)",
     acceptTerms: false,
   });
 
+  const [errors, setErrors] = useState({
+    email: "",
+    acceptTerms: "",
+  });
+
+  const [googleError, setGoogleError] = useState(null);
+
+  // 🔁 Listen for Google login result
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (!event.origin.includes("localhost") && !event.origin.includes("vercel.app")) return;
+
+      const { token, error } = event.data;
+
+      if (token) {
+        localStorage.setItem("token", token);
+        Swal.fire({
+          icon: "success",
+          title: "Logged in with Google!",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        navigate("/login");
+      } else if (error === "UserAlreadyExists") {
+        Swal.fire({
+          icon: "warning",
+          title: "Account Exists",
+          text: "An account with this email already exists. Please login instead.",
+          confirmButtonText: "Login",
+        }).then((res) => {
+          if (res.isConfirmed) navigate("/login");
+        });
+      } else if (error === "GoogleLoginFailed") {
+        Swal.fire({
+          icon: "error",
+          title: "Google Login Failed",
+          text: "Something went wrong. Please try again.",
+        });
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  const validate = () => {
+    const newErrors = { email: "", acceptTerms: "" };
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required.";
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address.";
+    }
+
+    if (!formData.acceptTerms) {
+      newErrors.acceptTerms = "Please accept the terms and privacy policy.";
+    }
+
+    setErrors(newErrors);
+    return !newErrors.email && !newErrors.acceptTerms;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.acceptTerms) {
-      Swal.fire({
-        icon: "warning",
-        title: "Terms Required",
-        text: "Please accept the terms and conditions to continue.",
-      });
-      return;
-    }
+    if (!validate()) return;
 
-    // Test API connection first
-    const isConnected = await testApiConnection();
-    if (!isConnected) {
-      Swal.fire({
-        icon: "error",
-        title: "Connection Error",
-        text: "Unable to connect to the server. Please check your internet connection and try again.",
-      });
-      return;
-    }
+    localStorage.setItem("signupEmail", formData.email);
 
     try {
-      await requestOTP(formData.email);
-      
-      // Store email in localStorage for verification step
-      localStorage.setItem("signupEmail", formData.email);
-      localStorage.setItem("signupLanguage", formData.language);
-      
-      Swal.fire({
-        icon: "success",
-        title: "OTP Sent",
-        text: "Please check your email for the verification code.",
-        timer: 2000,
-        showConfirmButton: false,
+      const response = await fetch(`${BASE_URL}/auth/request-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: formData.email }),
       });
-      
+
+      const result = await response.json();
+
+      if (result.errorCode === 1) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: result.errorMessage || "Failed to request OTP.",
+        });
+        return;
+      }
+
+      const { isVerified, isUserCreated } = result.data;
+
+      if (isVerified && isUserCreated) {
+        Swal.fire({
+          icon: "warning",
+          title: "This user already exists",
+          text: "An account with this email is already created.",
+          confirmButtonText: "Login",
+        }).then((res) => {
+          if (res.isConfirmed) navigate("/login");
+        });
+        return;
+      }
+
+      if (isVerified && !isUserCreated) {
+        navigate("/signup/complete");
+        return;
+      }
+
       navigate("/signup/verify");
-    } catch (error) {
-      console.error('OTP request error:', error);
+    } catch (err) {
+      console.error("OTP Request Error:", err);
       Swal.fire({
         icon: "error",
-        title: "Failed to Send OTP",
-        text: error.message || "Unable to send OTP. Please try again.",
+        title: "Unexpected Error",
+        text: "Something went wrong. Please try again later.",
       });
     }
   };
@@ -85,91 +153,101 @@ export default function AccountSetup() {
           </div>
 
           <div className="bg-white py-8 px-4 shadow-sm rounded-lg sm:px-10">
-            <button className="w-full bg-[#4267B2] text-white py-2 px-4 rounded-md hover:bg-[#365899] mb-6 flex items-center justify-center gap-2">
-              <span>Continue with Facebook</span>
+
+            {/* 🔴 Google login error above email input */}
+            {googleError && (
+              <div className="mb-4 text-red-600 text-sm font-medium text-center">
+                {googleError}
+              </div>
+            )}
+
+            {/* 🔘 Google Login */}
+            <button
+              type="button"
+              onClick={() => {
+                setGoogleError(""); // clear old errors
+                const width = 500;
+                const height = 600;
+                const left = (window.innerWidth - width) / 2;
+                const top = (window.innerHeight - height) / 2;
+
+                const popup = window.open(
+                  `${BASE_URL}/auth/google`,
+                  'GoogleSignIn',
+                  `width=${width},height=${height},top=${top},left=${left}`
+                );
+
+                if (popup) popup.focus();
+              }}
+              className="w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-100 mb-6 flex items-center justify-center gap-2"
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                className="w-5 h-5"
+              />
+              <span>Continue with Google</span>
             </button>
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  or use your email
-                </span>
+                <span className="px-2 bg-white text-gray-500">or use your email</span>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                   Email address *
                 </label>
                 <input
                   id="email"
                   name="email"
                   type="email"
-                  required
                   value={formData.email}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
+                  className={`mt-1 block w-full border ${
+                    errors.email ? "border-red-500" : "border-gray-300"
+                  } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
                 />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
               </div>
 
-              <div>
-                <label
-                  htmlFor="language"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Language *
-                </label>
-                <select
-                  id="language"
-                  name="language"
-                  value={formData.language}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
-                >
-                  <option>English (UK)</option>
-                  <option>English (US)</option>
-                </select>
-              </div>
-
-              <div className="flex items-center">
+              <div className="flex items-start">
                 <input
                   id="acceptTerms"
                   name="acceptTerms"
                   type="checkbox"
-                  required
                   checked={formData.acceptTerms}
                   onChange={handleChange}
-                  className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
+                  className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded mt-1"
                 />
-                <label
-                  htmlFor="acceptTerms"
-                  className="ml-2 block text-sm text-gray-900"
-                >
+                <label htmlFor="acceptTerms" className="ml-2 text-sm text-gray-900">
                   I accept{" "}
                   <Link to="/terms" className="text-blue-600 hover:underline">
                     Terms & Conditions
                   </Link>{" "}
                   and{" "}
                   <Link to="/privacy" className="text-blue-600 hover:underline">
-                    Privacy
+                    Privacy Policy
                   </Link>
                 </label>
               </div>
+              {errors.acceptTerms && (
+                <p className="text-sm text-red-600">{errors.acceptTerms}</p>
+              )}
 
               <div>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#003366] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003366] hover:bg-[#002244] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00ADE5]"
                 >
-                  {loading ? "Sending OTP..." : "Get Started"}
+                  Get Started
                 </button>
               </div>
             </form>

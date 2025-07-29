@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Trophy,
   Users,
@@ -15,7 +15,6 @@ import {
   LogOut,
 } from "lucide-react";
 import clsx from "clsx";
-import { useAuth } from "../hooks/useAuth.jsx";
 
 const menuItems = [
   { icon: Trophy, label: "Admin Home", path: "/", highlight: true },
@@ -29,12 +28,15 @@ const menuItems = [
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
-    setShowUserMenu(false);
+    // Clear stored user session
+    localStorage.clear();
+    // Redirect to login
+    window.location.href = "/login"; // Hard redirect
   };
+
   return (
     <>
       <button
@@ -89,9 +91,7 @@ export default function Sidebar() {
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100"
             >
               <User size={20} className="text-gray-600" />
-              <span className="text-gray-700">
-                {user ? `${user.firstName} ${user.lastName}` : "User"}
-              </span>
+              <span className="text-gray-700">John Doe</span>
             </button>
 
             {showUserMenu && (

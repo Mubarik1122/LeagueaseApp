@@ -1,60 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
-import { useAuth } from "../../hooks/useAuth.jsx";
-import Swal from "sweetalert2";
 
 export default function LeagueDetails() {
   const navigate = useNavigate();
-  const { createLeague, loading } = useAuth();
+
   const [formData, setFormData] = useState({
     leagueName: "",
-    country: "Pakistan",
-    seasonName: "2025",
-    seasonStartDate: "2025-07-04",
-    seasonEndDate: "2025-09-22",
+    country: "United States",
+    seasonName: "",
+    seasonStartDate: "",
+    seasonEndDate: "",
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    try {
-      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-      const sportName = localStorage.getItem("selectedSport") || "Football";
-      
-      const leagueData = {
-        email: userData.email,
-        leagueName: formData.leagueName,
-        country: formData.country,
-        seasonName: formData.seasonName,
-        seasonStartDate: formData.seasonStartDate,
-        seasonEndDate: formData.seasonEndDate,
-        sportName: sportName,
-        domainName: formData.leagueName.toLowerCase().replace(/\s+/g, ''),
-      };
+  const [formErrors, setFormErrors] = useState({});
 
-      const response = await createLeague(leagueData);
-      
-      // Store league data
-      localStorage.setItem("leagueDetails", JSON.stringify(response));
-      
-      Swal.fire({
-        icon: "success",
-        title: "League Created",
-        text: "Your league has been created successfully!",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-      
-      navigate("/signup/website-url");
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Failed to Create League",
-        text: error.message || "Please try again.",
-      });
-    }
-  };
+  const countries = [
+    "United States", "Pakistan", "India", "Bangladesh", "United Kingdom",
+    "Australia", "Canada", "Germany", "France", "China", "Japan", "Brazil",
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,6 +26,28 @@ export default function LeagueDetails() {
       ...prev,
       [name]: value,
     }));
+    setFormErrors((prev) => ({
+      ...prev,
+      [name]: "", // clear error on input
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const errors = {};
+    if (!formData.leagueName.trim()) errors.leagueName = "League name is required";
+    if (!formData.country) errors.country = "Country is required";
+    if (!formData.seasonName.trim()) errors.seasonName = "Season name is required";
+    if (!formData.seasonStartDate) errors.seasonStartDate = "Start date is required";
+    if (!formData.seasonEndDate) errors.seasonEndDate = "End date is required";
+
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length === 0) {
+      localStorage.setItem("leagueDetails", JSON.stringify(formData));
+      navigate("/signup/website-url");
+    }
   };
 
   return (
@@ -73,12 +59,13 @@ export default function LeagueDetails() {
               <Settings className="h-8 w-8 text-[#00ADE5]" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Step 3 of 5</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Step 3 of 4</h2>
           <p className="mt-2 text-gray-600">Enter league details</p>
         </div>
 
         <div className="bg-white p-8 rounded-lg shadow">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* League Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 League name
@@ -89,13 +76,18 @@ export default function LeagueDetails() {
               <input
                 type="text"
                 name="leagueName"
-                required
                 value={formData.leagueName}
                 onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
+                className={`mt-1 block w-full border ${
+                  formErrors.leagueName ? "border-red-500" : "border-gray-300"
+                } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
               />
+              {formErrors.leagueName && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.leagueName}</p>
+              )}
             </div>
 
+            {/* Country */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Country
@@ -107,33 +99,44 @@ export default function LeagueDetails() {
                 name="country"
                 value={formData.country}
                 onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
+                className={`mt-1 block w-full border ${
+                  formErrors.country ? "border-red-500" : "border-gray-300"
+                } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
               >
-                <option value="Pakistan">Pakistan</option>
-                <option value="India">India</option>
-                <option value="Bangladesh">Bangladesh</option>
-                {/* Add more countries as needed */}
+                {countries.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
+                ))}
               </select>
+              {formErrors.country && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.country}</p>
+              )}
             </div>
 
+            {/* Season Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Season name
               </label>
               <p className="text-xs text-gray-500 mb-1">
-                This might be something like 2022-23. You can change this later
-                if you need to.
+                This might be something like 2022-23. You can change this later if you need to.
               </p>
               <input
                 type="text"
                 name="seasonName"
-                required
                 value={formData.seasonName}
                 onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
+                className={`mt-1 block w-full border ${
+                  formErrors.seasonName ? "border-red-500" : "border-gray-300"
+                } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
               />
+              {formErrors.seasonName && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.seasonName}</p>
+              )}
             </div>
 
+            {/* Season Start Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Season Start Date
@@ -144,13 +147,18 @@ export default function LeagueDetails() {
               <input
                 type="date"
                 name="seasonStartDate"
-                required
                 value={formData.seasonStartDate}
                 onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
+                className={`mt-1 block w-full border ${
+                  formErrors.seasonStartDate ? "border-red-500" : "border-gray-300"
+                } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
               />
+              {formErrors.seasonStartDate && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.seasonStartDate}</p>
+              )}
             </div>
 
+            {/* Season End Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Season End Date
@@ -161,13 +169,18 @@ export default function LeagueDetails() {
               <input
                 type="date"
                 name="seasonEndDate"
-                required
                 value={formData.seasonEndDate}
                 onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]"
+                className={`mt-1 block w-full border ${
+                  formErrors.seasonEndDate ? "border-red-500" : "border-gray-300"
+                } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
               />
+              {formErrors.seasonEndDate && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.seasonEndDate}</p>
+              )}
             </div>
 
+            {/* Navigation Buttons */}
             <div className="flex justify-between pt-4">
               <button
                 type="button"
@@ -178,10 +191,9 @@ export default function LeagueDetails() {
               </button>
               <button
                 type="submit"
-                disabled={loading}
                 className="px-4 py-2 bg-[#003366] text-white rounded-md hover:bg-[#003366]"
               >
-                {loading ? "Creating League..." : "Next"}
+                Next
               </button>
             </div>
           </form>
