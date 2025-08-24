@@ -5,7 +5,7 @@ import Swal from "sweetalert2";
 import { authAPI } from "../../services/api";
 
 export default function AccountSetup() {
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://leagueaseappbackend-production.up.railway.app/api';
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
