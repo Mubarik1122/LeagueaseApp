@@ -28,6 +28,7 @@ import Download from "./pages/schedule/Download";
 import ResultSummary from "./pages/results/ResultSummary";
 import StandingsAdjustments from "./pages/results/StandingsAdjustments";
 import StatisticsDownload from "./pages/results/StatisticsDownload";
+import VisitSite from "./pages/VisitSite";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -104,6 +105,7 @@ function App() {
               <Route path="/account" element={<Account />} />
               <Route path="/billing" element={<Billing />} />
               <Route path="/help" element={<Help />} />
+              <Route path="/visit-site" element={<VisitSite />} />
             </Routes>
           </div>
         </main>
