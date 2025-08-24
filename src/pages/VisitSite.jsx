@@ -1,15 +1,32 @@
 import { useState } from "react";
-import { Search, Menu, X, Calendar, Trophy, Users, MapPin, Phone, Mail } from "lucide-react";
+import { Search, Menu, X, Calendar, Trophy, Users, MapPin, Phone, Mail, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function VisitSite() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const goBackToAdmin = () => {
+    window.location.href = '/';
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      {/* Back to Admin Button */}
+      <div className="fixed top-4 right-4 z-50">
+        <button
+          onClick={goBackToAdmin}
+          className="flex items-center gap-2 px-4 py-2 bg-[#00ADE5] text-white rounded-lg shadow-lg hover:bg-[#0099cc] transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Back to Admin
+        </button>
+      </div>
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

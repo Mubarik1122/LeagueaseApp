@@ -33,6 +33,7 @@ import VisitSite from "./pages/VisitSite";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isVisitSite, setIsVisitSite] = useState(false);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -45,6 +46,11 @@ function App() {
       document.body.classList.remove("mobile-nav-open");
     };
   }, [isMobileMenuOpen]);
+
+  // Check if current route is visit-site
+  useEffect(() => {
+    setIsVisitSite(window.location.pathname === '/visit-site');
+  }, []);
 
   if (!isAuthenticated) {
     return (
@@ -63,6 +69,17 @@ function App() {
           <Route path="/signup/league-details" element={<LeagueDetails />} />
           <Route path="/signup/website-url" element={<WebsiteUrl />} />
           {/* <Route path="/signup/subscription" element={<Subscription />} /> */}
+        </Routes>
+      </Router>
+    );
+  }
+
+  // If on visit site page, show only the public site without admin UI
+  if (isVisitSite) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/visit-site" element={<VisitSite />} />
         </Routes>
       </Router>
     );
@@ -105,7 +122,6 @@ function App() {
               <Route path="/account" element={<Account />} />
               <Route path="/billing" element={<Billing />} />
               <Route path="/help" element={<Help />} />
-              <Route path="/visit-site" element={<VisitSite />} />
             </Routes>
           </div>
         </main>

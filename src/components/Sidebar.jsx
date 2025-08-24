@@ -70,7 +70,12 @@ export default function Sidebar() {
             <NavLink
               key={item.path}
               to={item.path}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false);
+                if (item.path === '/visit-site') {
+                  window.location.href = '/visit-site';
+                }
+              }}
               className={({ isActive }) =>
                 clsx(
                   "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
