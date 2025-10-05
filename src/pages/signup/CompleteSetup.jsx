@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import Swal from "sweetalert2";
+import { authAPI } from "../../services/api";
 
 export default function CompleteSetup() {
   const navigate = useNavigate();

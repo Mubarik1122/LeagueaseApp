@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import clsx from "clsx";
+import { useMatch } from "../../hooks/useTournament";
+import { useEffect } from "react";
 
 const scheduleNavItems = [
   { id: "manage-matches", label: "MANAGE MATCHES", path: "/schedule" },
@@ -22,6 +24,7 @@ const scheduleNavItems = [
 
 export default function ManageMatches() {
   const location = useLocation();
+  const { matches, loading, error, fetchMatches } = useMatch();
   const [selectedMatches, setSelectedMatches] = useState(0);
   const [filters, setFilters] = useState({
     competition: "All",
@@ -36,20 +39,12 @@ export default function ManageMatches() {
     showGeneralNote: false,
   });
 
-  const matches = [
-    {
-      id: 1,
-      competition: "Division 2",
-      dateTime: "Wed 09/04/24 07:00 PM",
-      status: "Normal",
-      homeTeam: "978 Records",
-      roadTeam: "Bay State Snipers",
-      note: "",
-      finalScore: "47 - 51",
-      approved: true,
-      locked: true,
-    },
-  ];
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.userId) {
+      fetchMatches(user.userId);
+    }
+  }, []);
 
   return (
     <div className="p-6">
@@ -77,6 +72,18 @@ export default function ManageMatches() {
 
       {/* Content */}
       <div className="bg-white rounded-lg shadow">
+        {loading && (
+          <div className="p-4 text-center text-gray-600">
+            Loading matches...
+          </div>
+        )}
+        
+        {error && (
+          <div className="p-4 text-center text-red-600">
+            Error loading matches: {error}
+          </div>
+        )}
+        
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
@@ -239,7 +246,7 @@ export default function ManageMatches() {
             Actions ▼
           </button>
         </div>
-        <div className="text-sm text-gray-600">163 matches displayed</div>
+        <div className="text-sm text-gray-600">{matches.length} matches displayed</div>
       </div>
 
       {/* Matches Table */}
@@ -286,53 +293,63 @@ export default function ManageMatches() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {matches.map((match) => (
-              <tr key={match.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {match.competition}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {match.dateTime}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {match.status}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {match.homeTeam}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {match.roadTeam}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {match.note}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {match.finalScore}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {match.approved && <span className="text-green-600">✓</span>}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {match.locked && <span className="text-green-600">✓</span>}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <div className="flex space-x-2">
-                    <button className="text-blue-600 hover:text-red-800">
-                      Edit
-                    </button>
-                    <button className="text-blue-600 hover:text-red-800">
-                      Delete
-                    </button>
-                  </div>
+            {matches.length === 0 ? (
+              <tr>
+                <td colSpan="11" className="px-6 py-8 text-center text-gray-500">
+                  No matches found. Create your first match to get started.
                 </td>
               </tr>
-            ))}
+            ) : (
+              matches.map((match, index) => (
+                <tr key={match._id || index} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-red-500"
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {match.tournamentName || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {match.dateTime ? new Date(match.dateTime).toLocaleString() : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {match.status || 'Normal'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {match.homeTeamName || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {match.awayTeamName || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {match.note || ''}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {match.homeScore !== undefined && match.awayScore !== undefined 
+                      ? `${match.homeScore} - ${match.awayScore}` 
+                      : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {match.approved && <span className="text-green-600">✓</span>}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {match.scoreLocked && <span className="text-green-600">✓</span>}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex space-x-2">
+                      <button className="text-blue-600 hover:text-red-800">
+                        Edit
+                      </button>
+                      <button className="text-blue-600 hover:text-red-800">
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

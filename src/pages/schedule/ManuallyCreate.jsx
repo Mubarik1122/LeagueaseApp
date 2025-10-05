@@ -1,4 +1,7 @@
 import { useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 import { Link, useLocation } from "react-router-dom";
 import { AlertCircle, Grid, List } from "lucide-react";
 import clsx from "clsx";
@@ -25,13 +28,9 @@ export default function ManuallyCreate() {
   const [activeTab, setActiveTab] = useState("division");
   const [viewMode, setViewMode] = useState("grid");
   const [selectedDivision, setSelectedDivision] = useState("Division 1");
-  const [matchDateTime, setMatchDateTime] = useState({
-    day: "25",
-    month: "March",
-    year: "2025",
-    hour: "00",
-    minute: "00",
-  });
+
+  // ✅ FIX: Use Date object instead of custom object
+  const [matchDateTime, setMatchDateTime] = useState(null);
 
   const teams = [
     { id: "GOTC", name: "G.O.T.C [GOTC]" },
@@ -142,107 +141,25 @@ export default function ManuallyCreate() {
             </button>
           </div>
 
-          {/* Date/Time Selector */}
+          {/* ✅ Date/Time Picker */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Matches to take place on date and time:
             </label>
-            <div className="flex flex-wrap gap-2">
-              <select
-                value={matchDateTime.day}
-                onChange={(e) =>
-                  setMatchDateTime((prev) => ({ ...prev, day: e.target.value }))
-                }
-                className="border border-gray-300 rounded-md px-2 py-1"
-              >
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                  <option key={day} value={day}>
-                    {day}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={matchDateTime.month}
-                onChange={(e) =>
-                  setMatchDateTime((prev) => ({
-                    ...prev,
-                    month: e.target.value,
-                  }))
-                }
-                className="border border-gray-300 rounded-md px-2 py-1"
-              >
-                {[
-                  "January",
-                  "February",
-                  "March",
-                  "April",
-                  "May",
-                  "June",
-                  "July",
-                  "August",
-                  "September",
-                  "October",
-                  "November",
-                  "December",
-                ].map((month) => (
-                  <option key={month} value={month}>
-                    {month}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={matchDateTime.year}
-                onChange={(e) =>
-                  setMatchDateTime((prev) => ({
-                    ...prev,
-                    year: e.target.value,
-                  }))
-                }
-                className="border border-gray-300 rounded-md px-2 py-1"
-              >
-                <option>2025</option>
-                <option>2026</option>
-              </select>
-              <select
-                value={matchDateTime.hour}
-                onChange={(e) =>
-                  setMatchDateTime((prev) => ({
-                    ...prev,
-                    hour: e.target.value,
-                  }))
-                }
-                className="border border-gray-300 rounded-md px-2 py-1"
-              >
-                {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
-                  <option key={hour} value={hour.toString().padStart(2, "0")}>
-                    {hour.toString().padStart(2, "0")}
-                  </option>
-                ))}
-              </select>
-              <span className="text-gray-500">:</span>
-              <select
-                value={matchDateTime.minute}
-                onChange={(e) =>
-                  setMatchDateTime((prev) => ({
-                    ...prev,
-                    minute: e.target.value,
-                  }))
-                }
-                className="border border-gray-300 rounded-md px-2 py-1"
-              >
-                {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
-                  <option
-                    key={minute}
-                    value={minute.toString().padStart(2, "0")}
-                  >
-                    {minute.toString().padStart(2, "0")}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <DatePicker
+              selected={matchDateTime}
+              onChange={(date) => setMatchDateTime(date)}
+              showTimeSelect
+              timeFormat="HH:mm"
+              timeIntervals={15}
+              dateFormat="MMMM d, yyyy h:mm aa"
+              className="border border-gray-300 rounded-md px-3 py-2 w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholderText="Select date and time"
+            />
           </div>
 
-          <button className="px-4 py-2 bg-BLUE-600 text-white rounded hover:bg-[#003366]0">
+          {/* ✅ Fixed Button */}
+          <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-[#003366]">
             Create
           </button>
 

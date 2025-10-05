@@ -13,6 +13,7 @@ import {
   CreditCard,
   HelpCircle,
   LogOut,
+  Globe,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -23,6 +24,11 @@ const menuItems = [
   { icon: BarChart, label: "Results", path: "/results" },
   { icon: Users, label: "People", path: "/people" },
   { icon: MessageSquare, label: "Communication", path: "/communication" },
+  {
+    icon: Globe,
+    label: "Visit Site",
+    path: "https://leaguease-web.vercel.app/",
+  },
 ];
 
 export default function Sidebar() {
