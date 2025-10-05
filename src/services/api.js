@@ -1,23 +1,25 @@
 // Base API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://leagueaseappbackend-production.up.railway.app/api";
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   return {
-    'Content-Type': 'application/json',
-    'Authorization': token ? `Bearer ${token}` : '',
+    "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
   };
 };
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
   const data = await response.json();
-  
+
   if (!response.ok) {
-    throw new Error(data.errorMessage || 'API request failed');
+    throw new Error(data.errorMessage || "API request failed");
   }
-  
+
   return data;
 };
 
@@ -25,8 +27,8 @@ const handleResponse = async (response) => {
 export const authAPI = {
   requestOTP: async (email) => {
     const response = await fetch(`${API_BASE_URL}/auth/request-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     });
     return handleResponse(response);
@@ -34,8 +36,8 @@ export const authAPI = {
 
   verifyOTP: async (email, otp) => {
     const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, otp }),
     });
     return handleResponse(response);
@@ -43,8 +45,8 @@ export const authAPI = {
 
   verifyUsername: async (username) => {
     const response = await fetch(`${API_BASE_URL}/auth/verify-username`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username }),
     });
     return handleResponse(response);
@@ -52,8 +54,8 @@ export const authAPI = {
 
   signup: async (userData) => {
     const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
     return handleResponse(response);
@@ -61,8 +63,8 @@ export const authAPI = {
 
   login: async (identifier, password, leagueId = null) => {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ identifier, password, leagueId }),
     });
     return handleResponse(response);
@@ -70,8 +72,8 @@ export const authAPI = {
 
   forgotPassword: async (email, newPassword) => {
     const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, newPassword }),
     });
     return handleResponse(response);
@@ -79,8 +81,8 @@ export const authAPI = {
 
   createLeague: async (leagueData) => {
     const response = await fetch(`${API_BASE_URL}/auth/create-league`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(leagueData),
     });
     return handleResponse(response);
@@ -90,11 +92,14 @@ export const authAPI = {
 // League API functions
 export const leagueAPI = {
   getLeagueByIdentifier: async (identifier) => {
-    const response = await fetch(`${API_BASE_URL}/leaguease/get-leaguease-by-identifier`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier }),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/leaguease/get-leaguease-by-identifier`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier }),
+      }
+    );
     return handleResponse(response);
   },
 };
@@ -103,7 +108,7 @@ export const leagueAPI = {
 export const tournamentAPI = {
   save: async (tournamentData) => {
     const response = await fetch(`${API_BASE_URL}/tournament/save`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(tournamentData),
     });
@@ -111,10 +116,13 @@ export const tournamentAPI = {
   },
 
   getByUserId: async (userId) => {
-    const response = await fetch(`${API_BASE_URL}/tournament/get-tournament-by-User-Id?userId=${userId}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/tournament/get-tournament-by-User-Id?userId=${userId}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(response);
   },
 };
@@ -123,7 +131,7 @@ export const tournamentAPI = {
 export const teamAPI = {
   save: async (teamData) => {
     const response = await fetch(`${API_BASE_URL}/tournament/saveTeam`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(teamData),
     });
@@ -131,10 +139,13 @@ export const teamAPI = {
   },
 
   getByUserIdAndTournamentId: async (userId, tournamentId) => {
-    const response = await fetch(`${API_BASE_URL}/tournament/get-team-by-User-Id-and-tournament-Id?userId=${userId}&tournamentId=${tournamentId}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/tournament/get-team-by-User-Id-and-tournament-Id?userId=${userId}&tournamentId=${tournamentId}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(response);
   },
 };
@@ -143,7 +154,7 @@ export const teamAPI = {
 export const playerAPI = {
   save: async (playerData) => {
     const response = await fetch(`${API_BASE_URL}/tournament/savePlayer`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(playerData),
     });
@@ -151,10 +162,13 @@ export const playerAPI = {
   },
 
   getByUserIdAndTeam: async (userId, teamId) => {
-    const response = await fetch(`${API_BASE_URL}/tournament/get-players-by-userId-and-team?userId=${userId}&teamId=${teamId}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/tournament/get-players-by-userId-and-team?userId=${userId}&teamId=${teamId}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(response);
   },
 };
@@ -163,7 +177,7 @@ export const playerAPI = {
 export const matchAPI = {
   save: async (matchData) => {
     const response = await fetch(`${API_BASE_URL}/match/saveMatch`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(matchData),
     });
@@ -171,12 +185,12 @@ export const matchAPI = {
   },
 
   getAllByUserId: async (userId, matchId = null) => {
-    const url = matchId 
+    const url = matchId
       ? `${API_BASE_URL}/match/get-all-matches-by-user-Id?userId=${userId}&matchId=${matchId}`
       : `${API_BASE_URL}/match/get-all-matches-by-user-Id?userId=${userId}`;
-    
+
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: getAuthHeaders(),
     });
     return handleResponse(response);
@@ -187,7 +201,7 @@ export const matchAPI = {
 export const venueAPI = {
   save: async (venueData) => {
     const response = await fetch(`${API_BASE_URL}/venue/saveVenue`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(venueData),
     });
@@ -195,22 +209,25 @@ export const venueAPI = {
   },
 
   getDetails: async (userId, venueId = null) => {
-    const url = venueId 
+    const url = venueId
       ? `${API_BASE_URL}/venue/get-venue-details?userId=${userId}&venueId=${venueId}`
       : `${API_BASE_URL}/venue/get-venue-details?userId=${userId}`;
-    
+
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: getAuthHeaders(),
     });
     return handleResponse(response);
   },
 
   getNamesByUserId: async (userId) => {
-    const response = await fetch(`${API_BASE_URL}/venue/get-venue-names/${userId}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/venue/get-venue-names/${userId}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(response);
   },
 };
