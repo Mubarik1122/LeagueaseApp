@@ -4,13 +4,11 @@ import { Trophy } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Swal from "sweetalert2";
 import CryptoJS from "crypto-js";
-import { useAuth } from "../hooks/useAuth";
 
-export default function Login() {
+export default function Login({ onLogin }) {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -24,10 +22,6 @@ export default function Login() {
   });
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/admin");
-    }
-
     const rememberMe = localStorage.getItem("rememberMe") === "true";
     const token = localStorage.getItem("token");
     const rememberUntil = parseInt(localStorage.getItem("rememberUntil"), 10);
@@ -54,9 +48,10 @@ export default function Login() {
     }
 
     if (Date.now() < rememberUntil && token) {
-      navigate("/admin");
+      onLogin();
+      navigate("/");
     }
-  }, [navigate, isAuthenticated, ENCRYPTION_KEY, BASE_URL]);
+  }, [navigate, onLogin, ENCRYPTION_KEY]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -84,28 +79,47 @@ export default function Login() {
     if (!valid) return;
 
     try {
-      const result = await login(formData.username, formData.password);
+      const res = await fetch(`${BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          identifier: formData.username,
+          password: formData.password,
+        }),
+      });
 
-      if (result.success) {
+      const result = await res.json();
+
+      if (result.errorCode === 0) {
+        const { token, user } = result.data;
+
         if (formData.rememberMe) {
           const encryptedPassword = CryptoJS.AES.encrypt(formData.password, ENCRYPTION_KEY).toString();
+
           localStorage.setItem("rememberMe", "true");
-          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString());
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString()); // 24 hours
           localStorage.setItem("Username", formData.username);
           localStorage.setItem("Key", encryptedPassword);
         } else {
           localStorage.removeItem("rememberMe");
-          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString());
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString()); // 24 hours
           localStorage.removeItem("Username");
           localStorage.removeItem("Key");
         }
 
-        navigate("/admin");
+        onLogin();
+        navigate("/");
       } else {
         Swal.fire({
           icon: "error",
           title: "Login Failed",
-          text: result.error || "Invalid credentials.",
+          text: result.errorMessage || "Invalid credentials.",
         });
       }
     } catch (error) {
@@ -136,6 +150,7 @@ export default function Login() {
     );
 
     const receiveMessage = (event) => {
+      // ✅ Check for correct origin (important in production)
       if (!event.origin.includes(new URL(BASE_URL).origin)) return;
 
       const { token, error } = event.data;
@@ -147,8 +162,9 @@ export default function Login() {
           "rememberUntil",
           (Date.now() + 24 * 60 * 60 * 1000).toString()
         );
-        Swal.close();
-        navigate("/admin");
+        Swal.close(); // ✅ Close loading modal
+        onLogin();
+        navigate("/");
       } else if (error === "UserAlreadyExists") {
         Swal.fire({
           icon: "error",

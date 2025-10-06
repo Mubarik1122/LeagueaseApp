@@ -9,7 +9,7 @@ export const useAuth = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
-
+    
     if (token && userData) {
       try {
         const parsedUser = JSON.parse(userData);
@@ -21,23 +21,23 @@ export const useAuth = () => {
         localStorage.removeItem('user');
       }
     }
-
+    
     setLoading(false);
   }, []);
 
   const login = async (identifier, password, leagueId = null) => {
     try {
       const response = await authAPI.login(identifier, password, leagueId);
-
+      
       if (response.errorCode === 0) {
         const { token, user: userData } = response.data;
-
+        
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
-
+        
         setUser(userData);
         setIsAuthenticated(true);
-
+        
         return { success: true, data: response.data };
       } else {
         return { success: false, error: response.errorMessage };
@@ -54,7 +54,7 @@ export const useAuth = () => {
     localStorage.removeItem('rememberUntil');
     localStorage.removeItem('Username');
     localStorage.removeItem('Key');
-
+    
     setUser(null);
     setIsAuthenticated(false);
   };
