@@ -4,30 +4,33 @@ import { Trophy } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Swal from "sweetalert2";
 import CryptoJS from "crypto-js";
+import { useAuth } from "../hooks/useAuth";
 
-export default function Login({ onLogin }) {
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export default function Login() {
   const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
     rememberMe: false,
   });
 
   const [errors, setErrors] = useState({
-    username: "",
+    email: "",
     password: "",
   });
 
   useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/admin");
+    }
+
     const rememberMe = localStorage.getItem("rememberMe") === "true";
-    const token = localStorage.getItem("token");
-    const rememberUntil = parseInt(localStorage.getItem("rememberUntil"), 10);
 
     if (rememberMe) {
-      const savedUsername = localStorage.getItem("Username") || "";
+      const savedEmail = localStorage.getItem("Username") || "";
       const encryptedPassword = localStorage.getItem("Key");
 
       let decryptedPassword = "";
@@ -41,17 +44,12 @@ export default function Login({ onLogin }) {
       }
 
       setFormData({
-        username: savedUsername,
+        email: savedEmail,
         password: decryptedPassword,
         rememberMe: true,
       });
     }
-
-    if (Date.now() < rememberUntil && token) {
-      onLogin();
-      navigate("/");
-    }
-  }, [navigate, onLogin, ENCRYPTION_KEY]);
+  }, [navigate, isAuthenticated, ENCRYPTION_KEY]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -64,10 +62,10 @@ export default function Login({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     let valid = true;
-    const newErrors = { username: "", password: "" };
+    const newErrors = { email: "", password: "" };
 
-    if (!formData.username.trim()) {
-      newErrors.username = "Username or email is required.";
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required.";
       valid = false;
     }
     if (!formData.password) {
@@ -79,47 +77,26 @@ export default function Login({ onLogin }) {
     if (!valid) return;
 
     try {
-      const res = await fetch(`${BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          identifier: formData.username,
-          password: formData.password,
-        }),
-      });
+      const result = await login(formData.email, formData.password);
 
-      const result = await res.json();
-
-      if (result.errorCode === 0) {
-        const { token, user } = result.data;
-
+      if (result.success) {
         if (formData.rememberMe) {
           const encryptedPassword = CryptoJS.AES.encrypt(formData.password, ENCRYPTION_KEY).toString();
-
           localStorage.setItem("rememberMe", "true");
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(user));
-          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString()); // 24 hours
-          localStorage.setItem("Username", formData.username);
+          localStorage.setItem("Username", formData.email);
           localStorage.setItem("Key", encryptedPassword);
         } else {
           localStorage.removeItem("rememberMe");
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(user));
-          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString()); // 24 hours
           localStorage.removeItem("Username");
           localStorage.removeItem("Key");
         }
 
-        onLogin();
-        navigate("/");
+        navigate("/admin");
       } else {
         Swal.fire({
           icon: "error",
           title: "Login Failed",
-          text: result.errorMessage || "Invalid credentials.",
+          text: result.error || "Invalid credentials.",
         });
       }
     } catch (error) {
@@ -134,56 +111,10 @@ export default function Login({ onLogin }) {
 
   const handleGoogleLogin = () => {
     Swal.fire({
-      title: "Please wait...",
-      text: "Signing in with Google...",
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
+      icon: "info",
+      title: "Coming Soon",
+      text: "Google authentication will be available soon.",
     });
-
-    const popup = window.open(
-      `${BASE_URL}/auth/google`,
-      "_blank",
-      "width=500,height=600"
-    );
-
-    const receiveMessage = (event) => {
-      // ✅ Check for correct origin (important in production)
-      if (!event.origin.includes(new URL(BASE_URL).origin)) return;
-
-      const { token, error } = event.data;
-
-      if (token) {
-        localStorage.setItem("token", token);
-        localStorage.setItem("rememberMe", "false");
-        localStorage.setItem(
-          "rememberUntil",
-          (Date.now() + 24 * 60 * 60 * 1000).toString()
-        );
-        Swal.close(); // ✅ Close loading modal
-        onLogin();
-        navigate("/");
-      } else if (error === "UserAlreadyExists") {
-        Swal.fire({
-          icon: "error",
-          title: "Login Failed",
-          text: "This Google account is already linked with another login method.",
-        });
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Google Login Failed",
-          text: "Something went wrong during Google login.",
-        });
-      }
-
-      window.removeEventListener("message", receiveMessage);
-      popup?.close();
-    };
-
-    window.addEventListener("message", receiveMessage, false);
   };
 
 
@@ -224,20 +155,20 @@ export default function Login({ onLogin }) {
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                  Username or Email
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email
                 </label>
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={formData.username}
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
                   onChange={handleChange}
                   className={`mt-1 block w-full border ${
-                    errors.username ? "border-red-500" : "border-gray-300"
+                    errors.email ? "border-red-500" : "border-gray-300"
                   } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
                 />
-                {errors.username && <p className="text-red-600 text-sm mt-1">{errors.username}</p>}
+                {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
               </div>
 
               <div>

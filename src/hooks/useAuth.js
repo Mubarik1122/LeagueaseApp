@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { supabase } from '../lib/supabase';
+import { authAPI } from '../services/supabaseApi';
 
 export const useAuth = () => {
   const [user, setUser] = useState(null);
@@ -7,63 +8,84 @@ export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
+    const initAuth = async () => {
       try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
+        const session = await authAPI.getSession();
+        if (session && session.user) {
+          setUser(session.user);
+          setIsAuthenticated(true);
+        }
       } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
       }
-    }
-    
-    setLoading(false);
+    };
+
+    initAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        (() => {
+          if (session?.user) {
+            setUser(session.user);
+            setIsAuthenticated(true);
+          } else {
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        })();
+      }
+    );
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
-  const login = async (identifier, password, leagueId = null) => {
+  const login = async (email, password) => {
     try {
-      const response = await authAPI.login(identifier, password, leagueId);
-      
-      if (response.errorCode === 0) {
-        const { token, user: userData } = response.data;
-        
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        
-        setUser(userData);
-        setIsAuthenticated(true);
-        
-        return { success: true, data: response.data };
-      } else {
-        return { success: false, error: response.errorMessage };
-      }
+      const data = await authAPI.signIn(email, password);
+      setUser(data.user);
+      setIsAuthenticated(true);
+      return { success: true, data };
     } catch (error) {
+      console.error('Login error:', error);
       return { success: false, error: error.message };
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('rememberMe');
-    localStorage.removeItem('rememberUntil');
-    localStorage.removeItem('Username');
-    localStorage.removeItem('Key');
-    
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      await authAPI.signOut();
+      setUser(null);
+      setIsAuthenticated(false);
+
+      localStorage.removeItem('rememberMe');
+      localStorage.removeItem('rememberUntil');
+      localStorage.removeItem('Username');
+      localStorage.removeItem('Key');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
-  const signup = async (userData) => {
+  const signup = async (email, password, metadata = {}) => {
     try {
-      const response = await authAPI.signup(userData);
-      return { success: response.errorCode === 0, data: response };
+      const data = await authAPI.signUp(email, password, metadata);
+      return { success: true, data };
     } catch (error) {
+      console.error('Signup error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const resetPassword = async (email) => {
+    try {
+      await authAPI.resetPassword(email);
+      return { success: true };
+    } catch (error) {
+      console.error('Reset password error:', error);
       return { success: false, error: error.message };
     }
   };
@@ -75,5 +97,6 @@ export const useAuth = () => {
     login,
     logout,
     signup,
+    resetPassword,
   };
 };
