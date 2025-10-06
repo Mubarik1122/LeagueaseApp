@@ -7,18 +7,19 @@ import CryptoJS from "crypto-js";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
     rememberMe: false,
   });
 
   const [errors, setErrors] = useState({
-    email: "",
+    username: "",
     password: "",
   });
 
@@ -28,9 +29,11 @@ export default function Login() {
     }
 
     const rememberMe = localStorage.getItem("rememberMe") === "true";
+    const token = localStorage.getItem("token");
+    const rememberUntil = parseInt(localStorage.getItem("rememberUntil"), 10);
 
     if (rememberMe) {
-      const savedEmail = localStorage.getItem("Username") || "";
+      const savedUsername = localStorage.getItem("Username") || "";
       const encryptedPassword = localStorage.getItem("Key");
 
       let decryptedPassword = "";
@@ -44,12 +47,16 @@ export default function Login() {
       }
 
       setFormData({
-        email: savedEmail,
+        username: savedUsername,
         password: decryptedPassword,
         rememberMe: true,
       });
     }
-  }, [navigate, isAuthenticated, ENCRYPTION_KEY]);
+
+    if (Date.now() < rememberUntil && token) {
+      navigate("/admin");
+    }
+  }, [navigate, isAuthenticated, ENCRYPTION_KEY, BASE_URL]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -62,10 +69,10 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     let valid = true;
-    const newErrors = { email: "", password: "" };
+    const newErrors = { username: "", password: "" };
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required.";
+    if (!formData.username.trim()) {
+      newErrors.username = "Username or email is required.";
       valid = false;
     }
     if (!formData.password) {
@@ -77,16 +84,18 @@ export default function Login() {
     if (!valid) return;
 
     try {
-      const result = await login(formData.email, formData.password);
+      const result = await login(formData.username, formData.password);
 
       if (result.success) {
         if (formData.rememberMe) {
           const encryptedPassword = CryptoJS.AES.encrypt(formData.password, ENCRYPTION_KEY).toString();
           localStorage.setItem("rememberMe", "true");
-          localStorage.setItem("Username", formData.email);
+          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString());
+          localStorage.setItem("Username", formData.username);
           localStorage.setItem("Key", encryptedPassword);
         } else {
           localStorage.removeItem("rememberMe");
+          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString());
           localStorage.removeItem("Username");
           localStorage.removeItem("Key");
         }
@@ -111,10 +120,54 @@ export default function Login() {
 
   const handleGoogleLogin = () => {
     Swal.fire({
-      icon: "info",
-      title: "Coming Soon",
-      text: "Google authentication will be available soon.",
+      title: "Please wait...",
+      text: "Signing in with Google...",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
     });
+
+    const popup = window.open(
+      `${BASE_URL}/auth/google`,
+      "_blank",
+      "width=500,height=600"
+    );
+
+    const receiveMessage = (event) => {
+      if (!event.origin.includes(new URL(BASE_URL).origin)) return;
+
+      const { token, error } = event.data;
+
+      if (token) {
+        localStorage.setItem("token", token);
+        localStorage.setItem("rememberMe", "false");
+        localStorage.setItem(
+          "rememberUntil",
+          (Date.now() + 24 * 60 * 60 * 1000).toString()
+        );
+        Swal.close();
+        navigate("/admin");
+      } else if (error === "UserAlreadyExists") {
+        Swal.fire({
+          icon: "error",
+          title: "Login Failed",
+          text: "This Google account is already linked with another login method.",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Google Login Failed",
+          text: "Something went wrong during Google login.",
+        });
+      }
+
+      window.removeEventListener("message", receiveMessage);
+      popup?.close();
+    };
+
+    window.addEventListener("message", receiveMessage, false);
   };
 
 
@@ -155,20 +208,20 @@ export default function Login() {
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  Username or Email
                 </label>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
+                  id="username"
+                  name="username"
+                  type="text"
+                  value={formData.username}
                   onChange={handleChange}
                   className={`mt-1 block w-full border ${
-                    errors.email ? "border-red-500" : "border-gray-300"
+                    errors.username ? "border-red-500" : "border-gray-300"
                   } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
                 />
-                {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+                {errors.username && <p className="text-red-600 text-sm mt-1">{errors.username}</p>}
               </div>
 
               <div>

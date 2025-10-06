@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useAuth } from "./hooks/useAuth";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
-import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import AdminHome from "./pages/AdminHome";
 import Setup from "./pages/Setup";
@@ -55,6 +55,24 @@ function AuthenticatedLayout({ children }) {
       </main>
     </div>
   );
+}
+
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00ade5]"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
 }
 
 function App() {
