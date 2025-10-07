@@ -4,7 +4,7 @@ import { Trophy } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Swal from "sweetalert2";
 import CryptoJS from "crypto-js";
-import Navbar from "../components/NavBar";
+import Navbar from "../components/Navbar";
 
 export default function Login({ onLogin }) {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;

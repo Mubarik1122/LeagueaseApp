@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
-import Navbar from "../../components/NavBar";
+import Navbar from "../../components/Navbar";
 
 const sportCategories = {
   "Traditional Sports": [

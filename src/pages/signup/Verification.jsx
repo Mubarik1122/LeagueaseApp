@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 import Swal from "sweetalert2";
-import Navbar from "../../components/NavBar";
+import Navbar from "../../components/Navbar";
 
 export default function Verification() {
   const navigate = useNavigate();

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import Swal from "sweetalert2";
 import { authAPI } from "../../services/api";
-import Navbar from "../../components/NavBar";
+import Navbar from "../../components/Navbar";
 
 export default function CompleteSetup() {
   const navigate = useNavigate();
