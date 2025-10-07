@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { CreditCard, Check } from "lucide-react";
+import Navbar from "../../components/NavBar";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function Subscription() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
+      <Navbar />
       <div className="max-w-5xl w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-4">

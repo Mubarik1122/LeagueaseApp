@@ -4,6 +4,7 @@ import { Trophy } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import Swal from "sweetalert2";
 import CryptoJS from "crypto-js";
+import Navbar from "../components/NavBar";
 
 export default function Login({ onLogin }) {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -96,19 +97,28 @@ export default function Login({ onLogin }) {
         const { token, user } = result.data;
 
         if (formData.rememberMe) {
-          const encryptedPassword = CryptoJS.AES.encrypt(formData.password, ENCRYPTION_KEY).toString();
+          const encryptedPassword = CryptoJS.AES.encrypt(
+            formData.password,
+            ENCRYPTION_KEY
+          ).toString();
 
           localStorage.setItem("rememberMe", "true");
           localStorage.setItem("token", token);
           localStorage.setItem("user", JSON.stringify(user));
-          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString()); // 24 hours
+          localStorage.setItem(
+            "rememberUntil",
+            (Date.now() + 24 * 60 * 60 * 1000).toString()
+          ); // 24 hours
           localStorage.setItem("Username", formData.username);
           localStorage.setItem("Key", encryptedPassword);
         } else {
           localStorage.removeItem("rememberMe");
           localStorage.setItem("token", token);
           localStorage.setItem("user", JSON.stringify(user));
-          localStorage.setItem("rememberUntil", (Date.now() + 24 * 60 * 60 * 1000).toString()); // 24 hours
+          localStorage.setItem(
+            "rememberUntil",
+            (Date.now() + 24 * 60 * 60 * 1000).toString()
+          ); // 24 hours
           localStorage.removeItem("Username");
           localStorage.removeItem("Key");
         }
@@ -186,10 +196,9 @@ export default function Login({ onLogin }) {
     window.addEventListener("message", receiveMessage, false);
   };
 
-
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between">
+      <Navbar />
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
@@ -224,7 +233,10 @@ export default function Login({ onLogin }) {
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Username or Email
                 </label>
                 <input
@@ -237,11 +249,16 @@ export default function Login({ onLogin }) {
                     errors.username ? "border-red-500" : "border-gray-300"
                   } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
                 />
-                {errors.username && <p className="text-red-600 text-sm mt-1">{errors.username}</p>}
+                {errors.username && (
+                  <p className="text-red-600 text-sm mt-1">{errors.username}</p>
+                )}
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Password
                 </label>
                 <input
@@ -254,7 +271,9 @@ export default function Login({ onLogin }) {
                     errors.password ? "border-red-500" : "border-gray-300"
                   } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00ADE5] focus:border-[#00ADE5]`}
                 />
-                {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
+                {errors.password && (
+                  <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
@@ -267,7 +286,10 @@ export default function Login({ onLogin }) {
                     onChange={handleChange}
                     className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  <label
+                    htmlFor="remember-me"
+                    className="ml-2 block text-sm text-gray-900"
+                  >
                     Remember Me
                   </label>
                 </div>
@@ -284,7 +306,10 @@ export default function Login({ onLogin }) {
             </form>
 
             <div className="mt-6">
-              <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-blue-600 hover:underline"
+              >
                 Lost password
               </Link>
             </div>

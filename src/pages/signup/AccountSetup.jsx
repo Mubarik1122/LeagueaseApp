@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import Swal from "sweetalert2";
 import { authAPI } from "../../services/api";
+import Navbar from "../../components/NavBar";
 
 export default function AccountSetup() {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -23,7 +24,11 @@ export default function AccountSetup() {
   // 🔁 Listen for Google login result
   useEffect(() => {
     const handleMessage = (event) => {
-      if (!event.origin.includes("localhost") && !event.origin.includes("vercel.app")) return;
+      if (
+        !event.origin.includes("localhost") &&
+        !event.origin.includes("vercel.app")
+      )
+        return;
 
       const { token, error } = event.data;
 
@@ -142,6 +147,7 @@ export default function AccountSetup() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between">
+      <Navbar />
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
@@ -154,7 +160,6 @@ export default function AccountSetup() {
           </div>
 
           <div className="bg-white py-8 px-4 shadow-sm rounded-lg sm:px-10">
-
             {/* 🔴 Google login error above email input */}
             {googleError && (
               <div className="mb-4 text-red-600 text-sm font-medium text-center">
@@ -174,7 +179,7 @@ export default function AccountSetup() {
 
                 const popup = window.open(
                   `${BASE_URL}/auth/google`,
-                  'GoogleSignIn',
+                  "GoogleSignIn",
                   `width=${width},height=${height},top=${top},left=${left}`
                 );
 
@@ -195,13 +200,18 @@ export default function AccountSetup() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">or use your email</span>
+                <span className="px-2 bg-white text-gray-500">
+                  or use your email
+                </span>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email address *
                 </label>
                 <input
@@ -228,7 +238,10 @@ export default function AccountSetup() {
                   onChange={handleChange}
                   className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded mt-1"
                 />
-                <label htmlFor="acceptTerms" className="ml-2 text-sm text-gray-900">
+                <label
+                  htmlFor="acceptTerms"
+                  className="ml-2 text-sm text-gray-900"
+                >
                   I accept{" "}
                   <Link to="/terms" className="text-blue-600 hover:underline">
                     Terms & Conditions

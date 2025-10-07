@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
@@ -18,7 +23,6 @@ import LeagueTypeSelection from "./pages/signup/LeagueTypeSelection";
 import SportSelection from "./pages/signup/SportSelection";
 import LeagueDetails from "./pages/signup/LeagueDetails";
 import WebsiteUrl from "./pages/signup/WebsiteUrl";
-// import Subscription from "./pages/signup/Subscription";
 import ManageMatches from "./pages/schedule/ManageMatches";
 import SchedulerTools from "./pages/schedule/SchedulerTools";
 import ManuallyCreate from "./pages/schedule/ManuallyCreate";
@@ -45,69 +49,79 @@ function App() {
     };
   }, [isMobileMenuOpen]);
 
-  if (!isAuthenticated) {
-    return (
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route
-            path="/login"
-            element={<Login onLogin={() => setIsAuthenticated(true)} />}
-          />
-          <Route path="/signup" element={<AccountSetup />} />
-          <Route path="/signup/verify" element={<Verification />} />
-          <Route path="/signup/complete" element={<CompleteSetup />} />
-          <Route path="/signup/league-type" element={<LeagueTypeSelection />} />
-          <Route path="/signup/sport-selection" element={<SportSelection />} />
-          <Route path="/signup/league-details" element={<LeagueDetails />} />
-          <Route path="/signup/website-url" element={<WebsiteUrl />} />
-          {/* <Route path="/signup/subscription" element={<Subscription />} /> */}
-        </Routes>
-      </Router>
-    );
-  }
-
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Sidebar onMenuToggle={setIsMobileMenuOpen} />
-        <TopBar />
+      {/* 🔹 Public Routes */}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route
+          path="/login"
+          element={<Login onLogin={() => setIsAuthenticated(true)} />}
+        />
+        <Route path="/signup" element={<AccountSetup />} />
+        <Route path="/signup/verify" element={<Verification />} />
+        <Route path="/signup/complete" element={<CompleteSetup />} />
+        <Route path="/signup/league-type" element={<LeagueTypeSelection />} />
+        <Route path="/signup/sport-selection" element={<SportSelection />} />
+        <Route path="/signup/league-details" element={<LeagueDetails />} />
+        <Route path="/signup/website-url" element={<WebsiteUrl />} />
 
-        <main className="lg:ml-64 pt-16 px-4 lg:px-6">
-          <div className="mx-auto">
-            <Routes>
-              <Route path="/" element={<AdminHome />} />
-              <Route path="/setup" element={<Setup />} />
-              <Route path="/setup/competitions" element={<Competitions />} />
-              <Route path="/people*" element={<People />} />
-              <Route path="/schedule" element={<ManageMatches />} />
-              <Route
-                path="/schedule/scheduler-tools"
-                element={<SchedulerTools />}
-              />
-              <Route
-                path="/schedule/manually-create"
-                element={<ManuallyCreate />}
-              />
-              <Route path="/schedule/mass-delete" element={<MassDelete />} />
-              <Route path="/schedule/conflicts" element={<Conflicts />} />
-              <Route path="/schedule/download" element={<Download />} />
-              <Route path="/results" element={<ResultSummary />} />
-              <Route
-                path="/results/standings"
-                element={<StandingsAdjustments />}
-              />
-              <Route
-                path="/results/statistics"
-                element={<StatisticsDownload />}
-              />
-              <Route path="/account" element={<Account />} />
-              <Route path="/billing" element={<Billing />} />
-              <Route path="/help" element={<Help />} />
-            </Routes>
-          </div>
-        </main>
-      </div>
+        {/* 🔹 Protected (Admin) Routes */}
+        <Route
+          path="/admin/*"
+          element={
+            isAuthenticated ? (
+              <div className="min-h-screen bg-gray-50">
+                <Sidebar onMenuToggle={setIsMobileMenuOpen} />
+                <TopBar />
+                <main className="lg:ml-64 pt-16 px-4 lg:px-6">
+                  <Routes>
+                    <Route path="" element={<AdminHome />} />
+                    <Route path="setup" element={<Setup />} />
+                    <Route
+                      path="setup/competitions"
+                      element={<Competitions />}
+                    />
+                    <Route path="people*" element={<People />} />
+                    <Route path="schedule" element={<ManageMatches />} />
+                    <Route
+                      path="schedule/scheduler-tools"
+                      element={<SchedulerTools />}
+                    />
+                    <Route
+                      path="schedule/manually-create"
+                      element={<ManuallyCreate />}
+                    />
+                    <Route
+                      path="schedule/mass-delete"
+                      element={<MassDelete />}
+                    />
+                    <Route path="schedule/conflicts" element={<Conflicts />} />
+                    <Route path="schedule/download" element={<Download />} />
+                    <Route path="results" element={<ResultSummary />} />
+                    <Route
+                      path="results/standings"
+                      element={<StandingsAdjustments />}
+                    />
+                    <Route
+                      path="results/statistics"
+                      element={<StatisticsDownload />}
+                    />
+                    <Route path="account" element={<Account />} />
+                    <Route path="billing" element={<Billing />} />
+                    <Route path="help" element={<Help />} />
+                  </Routes>
+                </main>
+              </div>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        {/* Fallback for unknown routes */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </Router>
   );
 }
