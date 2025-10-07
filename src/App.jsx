@@ -51,7 +51,7 @@ function App() {
 
   return (
     <Router>
-      {/* 🔹 Public Routes */}
+      {/* Public Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route
