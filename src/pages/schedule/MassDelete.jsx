@@ -7,7 +7,7 @@ const scheduleNavItems = [
   {
     id: "scheduler-tools",
     label: "SCHEDULER TOOLS",
-    path: "/schedule/scheduler-tools",
+    path: "/admin/schedule/scheduler-tools",
   },
   {
     id: "manually-create",

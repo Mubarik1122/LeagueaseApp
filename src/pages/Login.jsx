@@ -5,11 +5,13 @@ import { FcGoogle } from "react-icons/fc";
 import Swal from "sweetalert2";
 import CryptoJS from "crypto-js";
 import Navbar from "../components/Navbar";
+import { useAuthContext } from "../context/AuthContext";
 
-export default function Login({ onLogin }) {
+export default function Login() {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
   const navigate = useNavigate();
+  const { login, user, isAuthenticated } = useAuthContext();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -24,8 +26,6 @@ export default function Login({ onLogin }) {
 
   useEffect(() => {
     const rememberMe = localStorage.getItem("rememberMe") === "true";
-    const token = localStorage.getItem("token");
-    const rememberUntil = parseInt(localStorage.getItem("rememberUntil"), 10);
 
     if (rememberMe) {
       const savedUsername = localStorage.getItem("Username") || "";
@@ -48,11 +48,11 @@ export default function Login({ onLogin }) {
       });
     }
 
-    if (Date.now() < rememberUntil && token) {
-      onLogin();
+    // ✅ If already logged in, go to home
+    if (isAuthenticated) {
       navigate("/");
     }
-  }, [navigate, onLogin, ENCRYPTION_KEY]);
+  }, [isAuthenticated, navigate, ENCRYPTION_KEY]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -64,6 +64,7 @@ export default function Login({ onLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     let valid = true;
     const newErrors = { username: "", password: "" };
 
@@ -80,22 +81,10 @@ export default function Login({ onLogin }) {
     if (!valid) return;
 
     try {
-      const res = await fetch(`${BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          identifier: formData.username,
-          password: formData.password,
-        }),
-      });
+      const result = await login(formData.username, formData.password);
 
-      const result = await res.json();
-
-      if (result.errorCode === 0) {
-        const { token, user } = result.data;
-
+      if (result.success) {
+        // ✅ Handle Remember Me locally
         if (formData.rememberMe) {
           const encryptedPassword = CryptoJS.AES.encrypt(
             formData.password,
@@ -103,33 +92,32 @@ export default function Login({ onLogin }) {
           ).toString();
 
           localStorage.setItem("rememberMe", "true");
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(user));
-          localStorage.setItem(
-            "rememberUntil",
-            (Date.now() + 24 * 60 * 60 * 1000).toString()
-          ); // 24 hours
           localStorage.setItem("Username", formData.username);
           localStorage.setItem("Key", encryptedPassword);
-        } else {
-          localStorage.removeItem("rememberMe");
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(user));
           localStorage.setItem(
             "rememberUntil",
             (Date.now() + 24 * 60 * 60 * 1000).toString()
           ); // 24 hours
+        } else {
+          localStorage.removeItem("rememberMe");
           localStorage.removeItem("Username");
           localStorage.removeItem("Key");
         }
 
-        onLogin();
+        Swal.fire({
+          icon: "success",
+          title: "Welcome!",
+          text: "Login successful!",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
         navigate("/");
       } else {
         Swal.fire({
           icon: "error",
           title: "Login Failed",
-          text: result.errorMessage || "Invalid credentials.",
+          text: result.error || "Invalid credentials.",
         });
       }
     } catch (error) {

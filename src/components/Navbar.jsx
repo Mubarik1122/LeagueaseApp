@@ -1,26 +1,27 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, X, Search } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useAuthContext } from "../context/AuthContext"; // ✅ adjust path as needed
 
 export default function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isAuthenticated, logout, user } = useAuthContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
-
   const goToDashboard = () => {
     navigate("/admin");
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
   };
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo Section */}
+          {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <img
@@ -37,7 +38,6 @@ export default function Navbar() {
               <button className="flex items-center text-black hover:text-[#00ADE5] transition">
                 Sports <ChevronDown className="ml-1 h-4 w-4" />
               </button>
-              {/* Dropdown placeholder */}
               <div className="absolute hidden group-hover:block bg-white border rounded-md shadow-lg mt-2 w-40">
                 <Link
                   to="#"
@@ -81,7 +81,7 @@ export default function Navbar() {
               Pricing
             </Link>
 
-            {/* Search Box */}
+            {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -91,8 +91,8 @@ export default function Navbar() {
               />
             </div>
 
-            {/* Auth Buttons */}
-            {!isLoggedIn ? (
+            {/* Auth Section */}
+            {!isAuthenticated ? (
               <>
                 <Link
                   to="/login"
@@ -108,16 +108,24 @@ export default function Navbar() {
                 </Link>
               </>
             ) : (
-              <button
-                onClick={goToDashboard}
-                className="text-black hover:text-[#00ADE5] px-3 py-2 text-sm font-medium"
-              >
-                Dashboard
-              </button>
+              <>
+                <button
+                  onClick={goToDashboard}
+                  className="text-black hover:text-[#00ADE5] px-3 py-2 text-sm font-medium"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="text-red-600 hover:text-red-700 px-3 py-2 text-sm font-medium"
+                >
+                  Logout
+                </button>
+              </>
             )}
           </div>
 
-          {/* Mobile menu toggle */}
+          {/* Mobile Toggle */}
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -129,7 +137,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200">
           <div className="px-4 pt-2 pb-3 space-y-2">
@@ -147,7 +155,7 @@ export default function Navbar() {
             >
               Pricing
             </Link>
-            {!isLoggedIn ? (
+            {!isAuthenticated ? (
               <>
                 <Link
                   to="/login"
@@ -165,15 +173,26 @@ export default function Navbar() {
                 </Link>
               </>
             ) : (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  goToDashboard();
-                }}
-                className="block w-full text-left text-gray-700 hover:text-[#00ADE5] py-2"
-              >
-                Dashboard
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    goToDashboard();
+                  }}
+                  className="block w-full text-left text-gray-700 hover:text-[#00ADE5] py-2"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="block w-full text-left text-red-600 hover:text-red-700 py-2"
+                >
+                  Logout
+                </button>
+              </>
             )}
           </div>
         </div>

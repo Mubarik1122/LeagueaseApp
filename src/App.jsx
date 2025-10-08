@@ -32,9 +32,10 @@ import Download from "./pages/schedule/Download";
 import ResultSummary from "./pages/results/ResultSummary";
 import StandingsAdjustments from "./pages/results/StandingsAdjustments";
 import StatisticsDownload from "./pages/results/StatisticsDownload";
+import { useAuthContext } from "./context/AuthContext";
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, loading } = useAuthContext();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -49,15 +50,16 @@ function App() {
     };
   }, [isMobileMenuOpen]);
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <Router>
       {/* Public Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route
-          path="/login"
-          element={<Login onLogin={() => setIsAuthenticated(true)} />}
-        />
+        <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<AccountSetup />} />
         <Route path="/signup/verify" element={<Verification />} />
         <Route path="/signup/complete" element={<CompleteSetup />} />
