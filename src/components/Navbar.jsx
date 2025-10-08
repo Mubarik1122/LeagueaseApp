@@ -13,7 +13,7 @@ export default function Navbar() {
   }, []);
 
   const goToDashboard = () => {
-    navigate("/"); // you can change to /admin if needed
+    navigate("/admin");
   };
 
   return (

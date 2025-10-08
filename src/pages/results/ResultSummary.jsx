@@ -71,7 +71,7 @@ export default function ResultSummary() {
         {/* Back Button */}
         <div>
           <Link
-            to="/results"
+            to="/admin/results"
             className="inline-block px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700"
           >
             Back

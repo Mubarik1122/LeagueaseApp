@@ -39,7 +39,7 @@ export default function StandingsAdjustments() {
         {/* Override Link */}
         <div>
           <Link
-            to="/standings/override"
+            to="/admin/standings/override"
             className="text-blue-600 hover:underline"
           >
             Click here to override a team's position in the standings.

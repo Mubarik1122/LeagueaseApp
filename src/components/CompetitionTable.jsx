@@ -16,8 +16,10 @@ export default function CompetitionTable({ competitions }) {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Competitions</h3>
-            <button 
+            <h3 className="text-lg font-semibold text-gray-800">
+              Competitions
+            </h3>
+            <button
               onClick={() => setShowCreateModal(true)}
               className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
             >
@@ -59,8 +61,12 @@ export default function CompetitionTable({ competitions }) {
             <tbody className="divide-y divide-gray-200">
               {competitions.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
-                    No competitions found. Create your first tournament to get started.
+                  <td
+                    colSpan="8"
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
+                    No competitions found. Create your first tournament to get
+                    started.
                   </td>
                 </tr>
               ) : (
@@ -74,7 +80,10 @@ export default function CompetitionTable({ competitions }) {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Link to="/teams" className="text-blue-600 hover:underline">
+                      <Link
+                        to="/admin/teams"
+                        className="text-blue-600 hover:underline"
+                      >
                         Add Teams
                       </Link>
                     </td>
@@ -96,7 +105,7 @@ export default function CompetitionTable({ competitions }) {
                     </td>
                     <td className="px-6 py-4">
                       <Link
-                        to="/standings"
+                        to="/admin/standings"
                         className="text-blue-600 hover:underline"
                       >
                         Setup
@@ -117,7 +126,7 @@ export default function CompetitionTable({ competitions }) {
           </table>
         </div>
       </div>
-      
+
       <CreateTournamentModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}

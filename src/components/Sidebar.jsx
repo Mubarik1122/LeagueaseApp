@@ -18,12 +18,12 @@ import {
 import clsx from "clsx";
 
 const menuItems = [
-  { icon: Trophy, label: "Admin Home", path: "/", highlight: true },
-  { icon: Settings, label: "Setup", path: "/setup" },
-  { icon: Calendar, label: "Schedule", path: "/schedule" },
-  { icon: BarChart, label: "Results", path: "/results" },
-  { icon: Users, label: "People", path: "/people" },
-  { icon: MessageSquare, label: "Communication", path: "/communication" },
+  { icon: Trophy, label: "Admin Home", path: "/admin", highlight: true },
+  { icon: Settings, label: "Setup", path: "/admin/setup" },
+  { icon: Calendar, label: "Schedule", path: "/admin/schedule" },
+  { icon: BarChart, label: "Results", path: "/admin/results" },
+  { icon: Users, label: "People", path: "/admin/people" },
+  { icon: MessageSquare, label: "Communication", path: "/admin/communication" },
   {
     icon: Globe,
     label: "Visit Site",
@@ -103,14 +103,14 @@ export default function Sidebar() {
             {showUserMenu && (
               <div className="mt-2 py-2 bg-white rounded-lg shadow-lg border border-gray-200">
                 <NavLink
-                  to="/account"
+                  to="/admin/account"
                   className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
                 >
                   <User size={16} />
                   <span>My Account</span>
                 </NavLink>
                 <NavLink
-                  to="/billing"
+                  to="/admin/billing"
                   className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
                 >
                   <CreditCard size={16} />
@@ -120,7 +120,7 @@ export default function Sidebar() {
                   </span>
                 </NavLink>
                 <NavLink
-                  to="/help"
+                  to="/admin/help"
                   className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50"
                 >
                   <HelpCircle size={16} />

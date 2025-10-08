@@ -7,20 +7,24 @@ import { AlertCircle, Grid, List } from "lucide-react";
 import clsx from "clsx";
 
 const scheduleNavItems = [
-  { id: "manage-matches", label: "MANAGE MATCHES", path: "/schedule" },
+  { id: "manage-matches", label: "MANAGE MATCHES", path: "/admin/schedule" },
   {
     id: "scheduler-tools",
     label: "SCHEDULER TOOLS",
-    path: "/schedule/scheduler-tools",
+    path: "/admin/schedule/scheduler-tools",
   },
   {
     id: "manually-create",
     label: "MANUALLY CREATE",
-    path: "/schedule/manually-create",
+    path: "/admin/schedule/manually-create",
   },
-  { id: "mass-delete", label: "MASS DELETE", path: "/schedule/mass-delete" },
-  { id: "conflicts", label: "CONFLICTS", path: "/schedule/conflicts" },
-  { id: "download", label: "DOWNLOAD", path: "/schedule/download" },
+  {
+    id: "mass-delete",
+    label: "MASS DELETE",
+    path: "/admin/schedule/mass-delete",
+  },
+  { id: "conflicts", label: "CONFLICTS", path: "/admin/schedule/conflicts" },
+  { id: "download", label: "DOWNLOAD", path: "/admin/schedule/download" },
 ];
 
 export default function ManuallyCreate() {

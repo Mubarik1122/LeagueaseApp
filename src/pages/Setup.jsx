@@ -39,10 +39,10 @@ export default function Setup() {
       <div className="mb-6 border-b border-gray-200">
         <nav className="flex space-x-4 md:space-x-8">
           <Link
-            to="/setup"
+            to="/admin/setup"
             className={clsx(
               "px-3 md:px-4 py-2 text-sm font-medium border-b-2 -mb-px",
-              location.pathname === "/setup"
+              location.pathname === "/admin/setup"
                 ? "border-[#00ADE5] text-[#00ADE5]"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             )}
@@ -50,10 +50,10 @@ export default function Setup() {
             SETTINGS
           </Link>
           <Link
-            to="/setup/competitions"
+            to="/admin/setup/competitions"
             className={clsx(
               "px-3 md:px-4 py-2 text-sm font-medium border-b-2 -mb-px",
-              location.pathname === "/setup/competitions"
+              location.pathname === "/admin/setup/competitions"
                 ? "border-[#00ADE5] text-[#00ADE5]"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             )}

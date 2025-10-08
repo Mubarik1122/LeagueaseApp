@@ -156,7 +156,7 @@ function ListPeople() {
             <>
               <div className="mb-6">
                 <Link
-                  to="/role-types"
+                  to="/admin/role-types"
                   className="text-[#00ade5] hover:underline"
                 >
                   To review and select role types specific to your league click

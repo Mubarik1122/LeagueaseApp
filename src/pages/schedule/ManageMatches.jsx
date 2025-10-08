@@ -6,20 +6,24 @@ import { useMatch } from "../../hooks/useTournament";
 import { useEffect } from "react";
 
 const scheduleNavItems = [
-  { id: "manage-matches", label: "MANAGE MATCHES", path: "/schedule" },
+  { id: "manage-matches", label: "MANAGE MATCHES", path: "/admin/schedule" },
   {
     id: "scheduler-tools",
     label: "SCHEDULER TOOLS",
-    path: "/schedule/scheduler-tools",
+    path: "/admin/schedule/scheduler-tools",
   },
   {
     id: "manually-create",
     label: "MANUALLY CREATE",
-    path: "/schedule/manually-create",
+    path: "/admin/schedule/manually-create",
   },
-  { id: "mass-delete", label: "MASS DELETE", path: "/schedule/mass-delete" },
-  { id: "conflicts", label: "CONFLICTS", path: "/schedule/conflicts" },
-  { id: "download", label: "DOWNLOAD", path: "/schedule/download" },
+  {
+    id: "mass-delete",
+    label: "MASS DELETE",
+    path: "/admin/schedule/mass-delete",
+  },
+  { id: "conflicts", label: "CONFLICTS", path: "/admin/schedule/conflicts" },
+  { id: "download", label: "DOWNLOAD", path: "/admin/schedule/download" },
 ];
 
 export default function ManageMatches() {
@@ -40,7 +44,7 @@ export default function ManageMatches() {
   });
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (user.userId) {
       fetchMatches(user.userId);
     }
@@ -77,13 +81,13 @@ export default function ManageMatches() {
             Loading matches...
           </div>
         )}
-        
+
         {error && (
           <div className="p-4 text-center text-red-600">
             Error loading matches: {error}
           </div>
         )}
-        
+
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
@@ -246,7 +250,9 @@ export default function ManageMatches() {
             Actions ▼
           </button>
         </div>
-        <div className="text-sm text-gray-600">{matches.length} matches displayed</div>
+        <div className="text-sm text-gray-600">
+          {matches.length} matches displayed
+        </div>
       </div>
 
       {/* Matches Table */}
@@ -295,7 +301,10 @@ export default function ManageMatches() {
           <tbody className="bg-white divide-y divide-gray-200">
             {matches.length === 0 ? (
               <tr>
-                <td colSpan="11" className="px-6 py-8 text-center text-gray-500">
+                <td
+                  colSpan="11"
+                  className="px-6 py-8 text-center text-gray-500"
+                >
                   No matches found. Create your first match to get started.
                 </td>
               </tr>
@@ -309,33 +318,40 @@ export default function ManageMatches() {
                     />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {match.tournamentName || 'N/A'}
+                    {match.tournamentName || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {match.dateTime ? new Date(match.dateTime).toLocaleString() : 'N/A'}
+                    {match.dateTime
+                      ? new Date(match.dateTime).toLocaleString()
+                      : "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {match.status || 'Normal'}
+                    {match.status || "Normal"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {match.homeTeamName || 'N/A'}
+                    {match.homeTeamName || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {match.awayTeamName || 'N/A'}
+                    {match.awayTeamName || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {match.note || ''}
+                    {match.note || ""}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {match.homeScore !== undefined && match.awayScore !== undefined 
-                      ? `${match.homeScore} - ${match.awayScore}` 
-                      : 'N/A'}
+                    {match.homeScore !== undefined &&
+                    match.awayScore !== undefined
+                      ? `${match.homeScore} - ${match.awayScore}`
+                      : "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {match.approved && <span className="text-green-600">✓</span>}
+                    {match.approved && (
+                      <span className="text-green-600">✓</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {match.scoreLocked && <span className="text-green-600">✓</span>}
+                    {match.scoreLocked && (
+                      <span className="text-green-600">✓</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex space-x-2">
