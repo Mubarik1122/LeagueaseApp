@@ -6,8 +6,8 @@ import { authAPI } from "../../services/api";
 import Navbar from "../../components/Navbar";
 
 export default function AccountSetup() {
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const [formData, setFormData] = useState({
     email: "",
@@ -88,15 +88,7 @@ export default function AccountSetup() {
     localStorage.setItem("signupEmail", formData.email);
 
     try {
-      const response = await fetch(`${BASE_URL}/auth/request-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: formData.email }),
-      });
-
-      const result = await response.json();
+      const result = await authAPI.requestOTP(formData.email);
 
       if (result.errorCode === 1) {
         Swal.fire({

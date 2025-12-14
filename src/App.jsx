@@ -13,6 +13,7 @@ import Setup from "./pages/Setup";
 import People from "./pages/People";
 import Competitions from "./pages/Competitions";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPasswordSimple";
 import Account from "./pages/Account";
 import Billing from "./pages/Billing";
 import Help from "./pages/Help";
@@ -32,6 +33,9 @@ import Download from "./pages/schedule/Download";
 import ResultSummary from "./pages/results/ResultSummary";
 import StandingsAdjustments from "./pages/results/StandingsAdjustments";
 import StatisticsDownload from "./pages/results/StatisticsDownload";
+import Teams from "./pages/Teams";
+import Standings from "./pages/Standings";
+import VenueManagement from "./pages/VenueManagement";
 import { useAuthContext } from "./context/AuthContext";
 
 function App() {
@@ -60,6 +64,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/signup" element={<AccountSetup />} />
         <Route path="/signup/verify" element={<Verification />} />
         <Route path="/signup/complete" element={<CompleteSetup />} />
@@ -79,11 +84,10 @@ function App() {
                 <main className="lg:ml-64 pt-16 px-4 lg:px-6">
                   <Routes>
                     <Route path="" element={<AdminHome />} />
-                    <Route path="setup" element={<Setup />} />
-                    <Route
-                      path="setup/competitions"
-                      element={<Competitions />}
-                    />
+                    <Route path="setup/*" element={<Setup />} />
+                    <Route path="teams" element={<Teams />} />
+                    <Route path="standings" element={<Standings />} />
+                    <Route path="venues" element={<VenueManagement />} />
                     <Route path="people*" element={<People />} />
                     <Route path="schedule" element={<ManageMatches />} />
                     <Route

@@ -17,7 +17,6 @@ export default function CompleteSetup() {
   const [showPassword, setShowPassword] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState(null); // "available", "taken", "error", null
   const [checkingUsername, setCheckingUsername] = useState(false);
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("signupEmail");
@@ -33,18 +32,10 @@ export default function CompleteSetup() {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${BASE_URL}/auth/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          email,
-        }),
+      const result = await authAPI.signup({
+        ...formData,
+        email,
       });
-
-      const result = await response.json();
 
       if (result.errorCode === 1) {
         Swal.fire({
@@ -82,15 +73,7 @@ export default function CompleteSetup() {
       if (trimmed.length >= 6 && trimmed.length <= 8) {
         setCheckingUsername(true);
         try {
-          const res = await fetch(`${BASE_URL}/auth/verify-username`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ username: trimmed }),
-          });
-
-          const data = await res.json();
+          const data = await authAPI.verifyUsername(trimmed);
 
           if (data.data.exists) {
             setUsernameStatus("taken");

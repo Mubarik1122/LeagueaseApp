@@ -27,7 +27,6 @@ export const useAuth = () => {
 
   const login = async (identifier, password, leagueId = null) => {
     try {
-      debugger;
       const response = await authAPI.login(identifier, password, leagueId);
 
       if (response.errorCode === 0) {

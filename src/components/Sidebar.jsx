@@ -16,6 +16,7 @@ import {
   Globe,
 } from "lucide-react";
 import clsx from "clsx";
+import { useAuthContext } from "../context/AuthContext";
 
 const menuItems = [
   { icon: Trophy, label: "Admin Home", path: "/admin", highlight: true },
@@ -35,12 +36,11 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
+  const { user, logout } = useAuthContext();
 
   const handleLogout = () => {
-    // Clear stored user session
-    localStorage.clear();
-    // Redirect to login
-    window.location.href = "/login"; // Hard redirect
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -62,7 +62,7 @@ export default function Sidebar() {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <img
-              src="\image\logo\9.png"
+              src="/image/logo/9.png"
               alt="Tournament Logo"
               className="h-16 object-contain"
             />
@@ -97,7 +97,7 @@ export default function Sidebar() {
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100"
             >
               <User size={20} className="text-gray-600" />
-              <span className="text-gray-700">John Doe</span>
+              <span className="text-gray-700">{user?.firstName} {user?.lastName}</span>
             </button>
 
             {showUserMenu && (

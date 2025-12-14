@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 import Swal from "sweetalert2";
+import { authAPI } from "../../services/api";
 import Navbar from "../../components/Navbar";
 
 export default function Verification() {
@@ -58,15 +59,7 @@ export default function Verification() {
     if (verificationCode.length !== 6) return;
 
     try {
-      const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-      const response = await fetch(`${BASE_URL}/auth/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp: verificationCode }),
-      });
-
-      const result = await response.json();
+      const result = await authAPI.verifyOTP(email, verificationCode);
 
       if (result.errorCode === 0 && result.data?.verified) {
         navigate("/signup/complete");
@@ -96,14 +89,7 @@ export default function Verification() {
     localStorage.setItem("otpSentAt", Date.now().toString());
 
     try {
-      const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      const response = await fetch(`${BASE_URL}/auth/request-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const result = await response.json();
+      const result = await authAPI.requestOTP(email);
 
       if (result.errorCode === 0) {
         Swal.fire({

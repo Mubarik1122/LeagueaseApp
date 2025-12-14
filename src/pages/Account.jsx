@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { User, Mail, Key, Shield } from "lucide-react";
+import { useAuthContext } from "../context/AuthContext";
 
 export default function Account() {
+
+  const { user, logout } = useAuthContext();
   const [formData, setFormData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
+    firstName: user.firstName || "John",
+    lastName: user.lastName || "Doe",
+    email: user.email || "example@gmail.com",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
