@@ -1,0 +1,997 @@
+{
+	"info": {
+		"_postman_id": "81c2d1a5-e141-42bc-bd51-2a3ca3e4e279",
+		"name": "Leaguease Backend Api's",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45722570",
+		"_collection_link": "https://muhammadmuaz-5360991.postman.co/workspace/Muhammad-Muaz's-Workspace~95841533-a3bd-434f-8c76-9710d83d44c1/collection/45722570-81c2d1a5-e141-42bc-bd51-2a3ca3e4e279?action=share&source=collection_link&creator=45722570"
+	},
+	"item": [
+		{
+			"name": "Auth Api's",
+			"item": [
+				{
+					"name": "Request-OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"muhammad.muaz.4sov@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/request-otp",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"request-otp"
+							]
+						},
+						"description": "Generated from cURL: curl -X 'POST' \\\r\n  'http://localhost:3000/api/auth/request-otp' \\\r\n  -H 'accept: */*' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -d '{\r\n  \"email\": \"muhammad.muaz.4sov@gmail.com\"\r\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "OTP Verification Api's",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"mmuaz9193lgu@gmail.com\",\r\n  \"otp\": \"923499\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/verify-otp",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"verify-otp"
+							]
+						},
+						"description": "Generated from cURL: curl -X 'POST' \\\r\n  'http://localhost:3000/api/auth/verify-otp' \\\r\n  -H 'accept: */*' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -d '{\r\n  \"email\": \"string\",\r\n  \"otp\": \"string\"\r\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Username Exist or Not",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"Muaz32\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/verify-username",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"verify-username"
+							]
+						},
+						"description": "Generated from cURL: curl -X 'POST' \\\r\n  'http://localhost:3000/api/auth/verify-username' \\\r\n  -H 'accept: application/json' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -d '{\r\n  \"username\": \"Muaz320\"\r\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "SignUp Api",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"firstName\": \"Muhammad\",\r\n  \"lastName\": \"Muaz\",\r\n  \"email\": \"muhammad.muaz.4sov@gmail.com\",\r\n  \"username\": \"Muaz320\",\r\n  \"password\": \"MyStrongP@ssw0rd\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/signup",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signup"
+							]
+						},
+						"description": "Generated from cURL: curl -X 'POST' \\\r\n  'http://localhost:3000/api/api/auth/signup' \\\r\n  -H 'accept: application/json' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -d '{\r\n  \"firstName\": \"John\",\r\n  \"lastName\": \"Doe\",\r\n  \"email\": \"john.doe@example.com\",\r\n  \"username\": \"johndoe\",\r\n  \"password\": \"MyStrongP@ssw0rd\"\r\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "Login Api",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"identifier\": \"Muaz320\",\r\n  \"password\": \"Muaz1234\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/login",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Generated from cURL: curl -X 'POST' \\\r\n  'http://localhost:3000/api/auth/login' \\\r\n  -H 'accept: */*' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -d '{\r\n  \"identifier\": \"mmuaz9193lgu@gmail.com\",\r\n  \"password\": \"Muaz@1234@\"\r\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "forgot-password Api",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"muhammad.muaz.4sov@gmail.com\",\r\n  \"newPassword\": \"Muaz1234\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/forgot-password",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"forgot-password"
+							]
+						},
+						"description": "Generated from cURL: curl -X 'POST' \\\r\n  'http://localhost:3000/api/auth/forgot-password' \\\r\n  -H 'accept: application/json' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -d '{\r\n  \"email\": \"mmuaz9193l3gu@gmail.com\",\r\n  \"newPassword\": \"Muaz@1234@@\"\r\n}'"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "League",
+			"item": [
+				{
+					"name": "Create League Api",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"muhammad.muaz.4sov@gmail.com\",\r\n  \"leagueName\": \"Champions League\",\r\n  \"country\": \"United States\",\r\n  \"seasonName\": \"2025\",\r\n  \"seasonStartDate\": \"2025-07-04\",\r\n  \"seasonEndDate\": \"2025-09-22\",\r\n  \"sportName\": \"Football\",\r\n  \"domainName\": \"cricketleague\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/create-league",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"create-league"
+							]
+						},
+						"description": "Generated from cURL: curl -X 'POST' \\\r\n  'http://localhost:3000/api/auth/create-league' \\\r\n  -H 'accept: application/json' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -d '{\r\n  \"email\": \"user@example.com\",\r\n  \"leagueName\": \"Champions League\",\r\n  \"country\": \"United States\",\r\n  \"seasonName\": \"2025\",\r\n  \"seasonStartDate\": \"2025-07-04\",\r\n  \"seasonEndDate\": \"2025-09-22\",\r\n  \"sportName\": \"Football\"\r\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "Get-leaguease-by-email Api",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"identifier\": \"Muaz320\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/leaguease/get-leaguease-by-identifier",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"leaguease",
+								"get-leaguease-by-identifier"
+							]
+						},
+						"description": "Generated from cURL: curl -X 'POST' \\\r\n  'http://localhost:3000/api/leaguease/get-leaguease-by-email' \\\r\n  -H 'accept: application/json' \\\r\n  -H 'Content-Type: application/json' \\\r\n  -d '{\r\n  \"email\": \"muhammad.muaz.4sov@gmail.com\"\r\n}'"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tournament Api's Collection",
+			"item": [
+				{
+					"name": "Tournament Api's",
+					"item": [
+						{
+							"name": "Save/Update Tournaments",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "accept",
+										"value": "*/*"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTE5MzgxMTgsImV4cCI6MTc1MjU0MjkxOH0.c8jJ2VFxUwJ5uXBINS2oLxxSJYySmlhMlR51FZ8LgoY",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"divisionId\":\"686c7b2f0c725180e07c8501\",\r\n  \"tournamentName\": \"Tournament 2\",\r\n  \"userId\": \"686132b239925bfad3413288\",\r\n  \"tournamentType\": \"Division\",\r\n  \"sequence\": 0,\r\n  \"shortCode\": \"DIV1\",\r\n  \"scoringSystem\": null,\r\n  \"promotionZone\": 0,\r\n  \"relegationZone\": 0,\r\n  \"showPromotionRelegation\": true,\r\n  \"positionHighlights\": \"auto\",\r\n  \"bestPossibleResult\": {\r\n    \"teamScore\": 0,\r\n    \"opponentScore\": 0\r\n  },\r\n  \"hideMatchesFrom\": \"2025-07-08T01:19:41.085Z\",\r\n  \"hideStandings\": true,\r\n  \"hidePlayers\": true,\r\n  \"hideScore\": true,\r\n  \"hideVenue\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/tournament/save",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"tournament",
+										"save"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get-tournament-by-User-Id",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "accept",
+										"value": "*/*"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTE5MzgxMTgsImV4cCI6MTc1MjU0MjkxOH0.c8jJ2VFxUwJ5uXBINS2oLxxSJYySmlhMlR51FZ8LgoY",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/tournament/get-tournament-by-User-Id?userId=686132b239925bfad3413288",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"tournament",
+										"get-tournament-by-User-Id"
+									],
+									"query": [
+										{
+											"key": "userId",
+											"value": "686132b239925bfad3413288"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Team Api's",
+					"item": [
+						{
+							"name": "Save/Update Team Api",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "accept",
+										"value": "*/*"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTI1MTQzNjgsImV4cCI6MTc1MzExOTE2OH0.BmRnt_CwEYmeMmGN1UM2vzIyeViH103QoY90Br-s1xY",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"teamId\": null,\r\n  \"userId\": \"686132b239925bfad3413288\",\r\n  \"tournamentId\": \"686c7b2f0c725180e07c8501\",\r\n  \"teamName\": \"Team 2 of Tournament 2\",\r\n  \"displayName\": \"Team 2\",\r\n  \"shortCode\": \"TEAM02\",\r\n  \"logo\": null,\r\n  \"venueIds\": [\r\n    \"6875c5cf1bf18ec6c5d98114\"\r\n  ],\r\n  \"about\": null,\r\n  \"isArchived\": false,\r\n  \"teamType\": null,\r\n  \"playersAgeCategory\": null,\r\n  \"upcomingSeason\": null\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/tournament/saveTeam",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"tournament",
+										"saveTeam"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get-team-by-User-Id-and-tournament-Id Api",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "accept",
+										"value": "*/*"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTI1MTQzNjgsImV4cCI6MTc1MzExOTE2OH0.BmRnt_CwEYmeMmGN1UM2vzIyeViH103QoY90Br-s1xY",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/tournament/get-team-by-User-Id-and-tournament-Id?userId=686132b239925bfad3413288&tournamentId=686c7b2f0c725180e07c8501",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"tournament",
+										"get-team-by-User-Id-and-tournament-Id"
+									],
+									"query": [
+										{
+											"key": "userId",
+											"value": "686132b239925bfad3413288"
+										},
+										{
+											"key": "tournamentId",
+											"value": "686c7b2f0c725180e07c8501"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Player Api's",
+					"item": [
+						{
+							"name": "Save/Update Player Api",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "accept",
+										"value": "*/*"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTMxNDQ3NDUsImV4cCI6MTc1Mzc0OTU0NX0.mPnE-Zu7uaJqSn-JKGsKv0WNlvbujreKgSSj93KsjUk",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"playerId\": null,\r\n  \"userId\": \"686132b239925bfad3413288\",\r\n  \"teamId\": \"686c97f12f4ee0f756b9b0f7\",\r\n  \"firstName\": \"Ghulam\",\r\n  \"middleInitial\": \"\",\r\n  \"lastName\": \"Qadir\",\r\n  \"dateOfBirth\": \"2000-01-18\",\r\n  \"email\": \"qadir@gmail.com\",\r\n  \"sendLoginInvite\": true,\r\n  \"roles\": [\r\n    {\r\n      \"role\": \"Player\",\r\n      \"organisation\": \"Team 1\",\r\n      \"from\": \"2025-07-08\",\r\n      \"to\": \"2025-07-08\"\r\n    }\r\n  ],\r\n  \"registrationStatus\": \"active\",\r\n  \"contactUsPreference\": true,\r\n  \"internalReference1\": \"string\",\r\n  \"internalReference2\": \"string\",\r\n  \"workPhone\": \"string\",\r\n  \"homePhone\": \"string\",\r\n  \"mobilePhone\": \"string\",\r\n  \"address\": {\r\n    \"houseName\": \"string\",\r\n    \"houseNumber\": \"string\",\r\n    \"line1\": \"string\",\r\n    \"line2\": \"string\",\r\n    \"line3\": \"string\",\r\n    \"city\": \"string\",\r\n    \"county\": \"string\",\r\n    \"postalCode\": \"string\"\r\n  }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/tournament/savePlayer",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"tournament",
+										"savePlayer"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get-players-by-User-Id-and-team Api",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTE5MzgxMTgsImV4cCI6MTc1MjU0MjkxOH0.c8jJ2VFxUwJ5uXBINS2oLxxSJYySmlhMlR51FZ8LgoY",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/tournament/get-players-by-userId-and-team?userId=686132b239925bfad3413288&teamId=686c97f12f4ee0f756b9b0f7",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"tournament",
+										"get-players-by-userId-and-team"
+									],
+									"query": [
+										{
+											"key": "userId",
+											"value": "686132b239925bfad3413288"
+										},
+										{
+											"key": "teamId",
+											"value": "686c97f12f4ee0f756b9b0f7"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Match Api's",
+					"item": [
+						{
+							"name": "Scoring Api's",
+							"item": [
+								{
+									"name": "Get-All-Point-Type Api",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "accept",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTMxNDQ3NDUsImV4cCI6MTc1Mzc0OTU0NX0.mPnE-Zu7uaJqSn-JKGsKv0WNlvbujreKgSSj93KsjUk"
+											}
+										],
+										"url": {
+											"raw": "{{baseURL}}/api/match/get-point-type-all?userId=686132b239925bfad3413288",
+											"host": [
+												"{{baseURL}}"
+											],
+											"path": [
+												"api",
+												"match",
+												"get-point-type-all"
+											],
+											"query": [
+												{
+													"key": "userId",
+													"value": "686132b239925bfad3413288"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Scoring Points Api",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "accept",
+												"value": "*/*"
+											},
+											{
+												"key": "Authorization",
+												"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTMxNDQ3NDUsImV4cCI6MTc1Mzc0OTU0NX0.mPnE-Zu7uaJqSn-JKGsKv0WNlvbujreKgSSj93KsjUk"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"pointId\":\"68818e385c32555f120b7ebe\",\r\n  \"userId\": \"686132b239925bfad3413288\",\r\n  \"label\": \"Free Throws Attempted\",\r\n  \"category\": \"Free Throws Attempted\",\r\n  \"sequence\": 9,\r\n  \"isCumulativeToPlayer\": true,\r\n  \"isLowestMostImportant\": false,\r\n  \"isCumulativeToTeam\": true,\r\n  \"isCheckbox\": false,\r\n  \"isHidden\": false,\r\n  \"isArchived\": false\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseURL}}/api/match/point-type-create",
+											"host": [
+												"{{baseURL}}"
+											],
+											"path": [
+												"api",
+												"match",
+												"point-type-create"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Score keeping Api",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "accept",
+												"value": "*/*"
+											},
+											{
+												"key": "Authorization",
+												"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTMxNDQ3NDUsImV4cCI6MTc1Mzc0OTU0NX0.mPnE-Zu7uaJqSn-JKGsKv0WNlvbujreKgSSj93KsjUk"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n  \"userId\": \"686132b239925bfad3413288\",\r\n  \"matchId\": \"6875d6b69ee1e202a95cd559\",  // link to the match\r\n  \"teamId\": \"686c97f12f4ee0f756b9b0f7\",  // this score link to the team\r\n  \"playerId\": \"687eee6b77eefd97e1d23b53\", // link to the player\r\n  \"pointTypeId\": \"68818d705c32555f120b7eb8\",  // link to Points Table\r\n  \"value\": 1\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseURL}}/api/match/capture-score",
+											"host": [
+												"{{baseURL}}"
+											],
+											"path": [
+												"api",
+												"match",
+												"capture-score"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Player Score According to match and Team Api",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "accept",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTMxNDQ3NDUsImV4cCI6MTc1Mzc0OTU0NX0.mPnE-Zu7uaJqSn-JKGsKv0WNlvbujreKgSSj93KsjUk"
+											}
+										],
+										"url": {
+											"raw": "{{baseURL}}/api/match/player-stats?matchId=6875d6b69ee1e202a95cd559&teamId=686c97f12f4ee0f756b9b0f7",
+											"host": [
+												"{{baseURL}}"
+											],
+											"path": [
+												"api",
+												"match",
+												"player-stats"
+											],
+											"query": [
+												{
+													"key": "matchId",
+													"value": "6875d6b69ee1e202a95cd559"
+												},
+												{
+													"key": "teamId",
+													"value": "686c97f12f4ee0f756b9b0f7"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Save/Update Match Api",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "accept",
+										"value": "*/*"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTI1MTQzNjgsImV4cCI6MTc1MzExOTE2OH0.BmRnt_CwEYmeMmGN1UM2vzIyeViH103QoY90Br-s1xY",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"matchId\": null,\r\n  \"userId\": \"686132b239925bfad3413288\",\r\n  \"homeTeamId\": \"6874700257e9be3c56c4f805\",\r\n  \"awayTeamId\": \"6875d5a16b509776bed7d0eb\",\r\n  \"venueId\": \"6875c5cf1bf18ec6c5d98114\",\r\n  \"dateTime\": \"2025-07-16T04:03:16.735Z\",\r\n  \"status\": \"Normal\",\r\n  \"dateStatus\": \"Normal\",\r\n  \"homeScore\": 0,\r\n  \"awayScore\": 0,\r\n  \"note\": null,\r\n  \"displayNote\": false,\r\n  \"homeTeamNote\": null,\r\n  \"awayTeamNote\": null,\r\n  \"scoreLocked\": false,\r\n  \"homeStatsLocked\": false,\r\n  \"awayStatsLocked\": false\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/match/saveMatch",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"match",
+										"saveMatch"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get-All-Matches-By-User-Id Api",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "accept",
+										"value": "*/*"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTI1MTQzNjgsImV4cCI6MTc1MzExOTE2OH0.BmRnt_CwEYmeMmGN1UM2vzIyeViH103QoY90Br-s1xY",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseURL}}/api/match/get-all-matches-by-user-Id?userId=686132b239925bfad3413288&matchId=6875d6b69ee1e202a95cd559",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"match",
+										"get-all-matches-by-user-Id"
+									],
+									"query": [
+										{
+											"key": "userId",
+											"value": "686132b239925bfad3413288"
+										},
+										{
+											"key": "matchId",
+											"value": "6875d6b69ee1e202a95cd559"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Venue Api's Collection",
+			"item": [
+				{
+					"name": "Save/Update Venue Api",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTI1MTQzNjgsImV4cCI6MTc1MzExOTE2OH0.BmRnt_CwEYmeMmGN1UM2vzIyeViH103QoY90Br-s1xY",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"venueId\": \"6875c5cf1bf18ec6c5d98114\",\r\n  \"userId\": \"686132b239925bfad3413288\",\r\n  \"venueName\": \"Bahria Town1\",\r\n  \"addressLine1\": null,\r\n  \"addressLine2\": null,\r\n  \"addressLine3\": null,\r\n  \"townCity\": null,\r\n  \"county\": null,\r\n  \"state\": null,\r\n  \"postcode\": null,\r\n  \"telephone\": null,\r\n  \"mapLink\": null,\r\n  \"numberOfSubVenues\": 0,\r\n  \"directions\": null,\r\n  \"showOnVenuesPage\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/venue/saveVenue",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"venue",
+								"saveVenue"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get-Venue-Details By UserId Or VenueId Api",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTI1MTQzNjgsImV4cCI6MTc1MzExOTE2OH0.BmRnt_CwEYmeMmGN1UM2vzIyeViH103QoY90Br-s1xY",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/venue/get-venue-details?userId=686132b239925bfad3413288&venueId=6875c5cf1bf18ec6c5d98114",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"venue",
+								"get-venue-details"
+							],
+							"query": [
+								{
+									"key": "userId",
+									"value": "686132b239925bfad3413288"
+								},
+								{
+									"key": "venueId",
+									"value": "6875c5cf1bf18ec6c5d98114"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get-Venue-Names by User Id Api",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODYxMzJiMjM5OTI1YmZhZDM0MTMyODgiLCJ1c2VybmFtZSI6Ik11YXozMjAiLCJlbWFpbCI6Im11aGFtbWFkLm11YXouNHNvdkBnbWFpbC5jb20iLCJpYXQiOjE3NTI1MTQzNjgsImV4cCI6MTc1MzExOTE2OH0.BmRnt_CwEYmeMmGN1UM2vzIyeViH103QoY90Br-s1xY",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/venue/get-venue-names/686132b239925bfad3413288",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"venue",
+								"get-venue-names",
+								"686132b239925bfad3413288"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "https://leagueaseappbackend-production.up.railway.app",
+			"type": "default"
+		}
+	]
+}
