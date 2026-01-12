@@ -142,13 +142,12 @@ export const scoringAPI = {
 };
 ```
 
----
 
 ## Partially Integrated APIs (0)
 
 No partially integrated APIs found. All integrated APIs appear to be fully functional.
 
----
+
 
 ## Issues / Potential Fixes
 
