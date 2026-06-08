@@ -7,12 +7,12 @@ export default function Subscription() {
 
   const handleFreePlan = () => {
     localStorage.setItem("subscription", "free");
-    navigate("/admin");
+    navigate("/dashboard");
   };
 
   const handleGoldTrial = () => {
     localStorage.setItem("subscription", "gold-trial");
-    navigate("/admin");
+    navigate("/dashboard");
   };
 
   return (

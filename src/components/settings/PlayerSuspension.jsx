@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 
 const PlayerSuspension = () => {
@@ -12,34 +12,38 @@ const PlayerSuspension = () => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.userId;
+  const hasFetched = useRef(false);
 
   // Fetch settings on mount
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const result = await res.json();
-
-        if (result.errorCode === 0 && result.data?.playerSuspensionOptions) {
-          setOptions({
-            enableSystem: result.data.playerSuspensionOptions.enableSystem ?? true,
-            displayDivision: result.data.playerSuspensionOptions.displayDivision ?? true,
-            displayTeam: result.data.playerSuspensionOptions.displayTeam ?? true,
-            displayMatch: result.data.playerSuspensionOptions.displayMatch ?? true,
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      const fetchSettings = async () => {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           });
-        }
-      } catch (error) {
-        console.error("Error fetching settings:", error);
-      }
-    };
 
-    fetchSettings();
+          const result = await res.json();
+
+          if (result.errorCode === 0 && result.data?.playerSuspensionOptions) {
+            setOptions({
+              enableSystem: result.data.playerSuspensionOptions.enableSystem ?? true,
+              displayDivision: result.data.playerSuspensionOptions.displayDivision ?? true,
+              displayTeam: result.data.playerSuspensionOptions.displayTeam ?? true,
+              displayMatch: result.data.playerSuspensionOptions.displayMatch ?? true,
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching settings:", error);
+        }
+      };
+
+      fetchSettings();
+    }
   }, []);
 
   const handleOptionChange = (field) => {
@@ -74,7 +78,15 @@ const PlayerSuspension = () => {
       const result = await res.json();
 
       if (res.ok && result.errorCode === 0) {
-        Swal.fire("Saved", "Player suspension settings saved successfully!", "success");
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "Saved",
+          text: "Player suspension settings saved successfully!",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       } else {
         Swal.fire("Error", result.errorMessage || "Failed to save", "error");
       }

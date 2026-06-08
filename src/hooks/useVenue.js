@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { venueAPI } from '../services/api';
 
 export const useVenue = () => {
@@ -7,14 +7,15 @@ export const useVenue = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchVenues = async (userId, venueId = null) => {
+  const fetchVenues = useCallback(async (userId, venueId = null) => {
     setLoading(true);
     setError(null);
     
     try {
       const response = await venueAPI.getDetails(userId, venueId);
       if (response.errorCode === 0) {
-        setVenues(response.data || []);
+        const data = response.data;
+        setVenues(Array.isArray(data) ? data : data ? [data] : []);
       } else {
         setError(response.errorMessage);
       }
@@ -23,9 +24,9 @@ export const useVenue = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchVenueNames = async (userId) => {
+  const fetchVenueNames = useCallback(async (userId) => {
     setLoading(true);
     setError(null);
     
@@ -41,9 +42,9 @@ export const useVenue = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const saveVenue = async (venueData) => {
+  const saveVenue = useCallback(async (venueData) => {
     try {
       const response = await venueAPI.save(venueData);
       if (response.errorCode === 0) {
@@ -58,7 +59,22 @@ export const useVenue = () => {
     } catch (err) {
       return { success: false, error: err.message };
     }
-  };
+  }, [fetchVenues]);
+
+  const deleteVenue = useCallback(async (venueId, userId) => {
+    try {
+      const response = await venueAPI.deleteById(venueId, userId);
+      if (response.errorCode === 0) {
+        if (userId) {
+          await fetchVenues(userId);
+        }
+        return { success: true, data: response.data };
+      }
+      return { success: false, error: response.errorMessage };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }, [fetchVenues]);
 
   return {
     venues,
@@ -68,5 +84,6 @@ export const useVenue = () => {
     fetchVenues,
     fetchVenueNames,
     saveVenue,
+    deleteVenue,
   };
 };

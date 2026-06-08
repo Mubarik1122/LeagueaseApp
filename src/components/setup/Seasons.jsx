@@ -1,243 +1,256 @@
-import { useState, useEffect } from "react";
-import { Calendar, Lock, Unlock, Eye, EyeOff, Edit2, Save, X, Plus, Star } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Calendar,
+  Lock,
+  Unlock,
+  Eye,
+  EyeOff,
+  Edit2,
+  Plus,
+  Star,
+  Trash2,
+  X,
+  Save,
+} from "lucide-react";
 import Swal from "sweetalert2";
+import Modal from "../Modal";
+import {
+  CountBadgeButton,
+  ListViewModal,
+} from "./CountViewModal";
+import SetupTabHeader, { SetupPrimaryButton } from "./SetupTabHeader";
+import { seasonAPI } from "../../services/api";
+import { useCompanyContext } from "../../context/CompanyContext";
+
+const EMPTY_FORM = {
+  seasonId: null,
+  seasonName: "",
+  seasonStartDate: "",
+  seasonEndDate: "",
+  isHidden: false,
+  isLocked: false,
+};
+
+function getSeasonDetails(season) {
+  if (!season) return [];
+  return [
+    { id: "name", label: "Season Name", value: season.seasonName || "—" },
+    {
+      id: "start",
+      label: "Start Date",
+      value: season.seasonStartDate
+        ? new Date(season.seasonStartDate).toLocaleDateString()
+        : "—",
+    },
+    {
+      id: "end",
+      label: "End Date",
+      value: season.seasonEndDate
+        ? new Date(season.seasonEndDate).toLocaleDateString()
+        : "—",
+    },
+    { id: "hidden", label: "Hidden", value: season.isHidden ? "Yes" : "No" },
+    { id: "locked", label: "Locked", value: season.isLocked ? "Yes" : "No" },
+    {
+      id: "default",
+      label: "Default Season",
+      value: season.isDefault ? "Yes" : "No",
+    },
+    {
+      id: "current",
+      label: "Current Season",
+      value: season.isCurrent ? "Yes" : "No",
+    },
+  ];
+}
+
+const toDateInputValue = (value) => {
+  if (!value) return "";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
 
 export default function Seasons() {
+  const { isSuperAdmin, selectedCompanyId, companiesReady } =
+    useCompanyContext();
   const [seasons, setSeasons] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editForm, setEditForm] = useState({
-    seasonId: null,
-    seasonName: "",
-    seasonStartDate: "",
-    seasonEndDate: "",
-    isHidden: false,
-    isLocked: false,
-    isDefault: false,
+  const [showSeasonModal, setShowSeasonModal] = useState(false);
+  const [modalMode, setModalMode] = useState("create"); // create | edit
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [viewSeason, setViewSeason] = useState(null);
+  const loadRequestIdRef = useRef(0);
+
+  const normalizeSeason = (season) => ({
+    _id: season?._id || season?.seasonId || "",
+    seasonName: season?.seasonName || "",
+    seasonStartDate: toDateInputValue(
+      season?.startDate || season?.seasonStartDate || ""
+    ),
+    seasonEndDate: toDateInputValue(
+      season?.endDate || season?.seasonEndDate || ""
+    ),
+    isHidden: season?.hidden ?? season?.isHidden ?? false,
+    isLocked: season?.locked ?? season?.isLocked ?? false,
+    isDefault: season?.isDefault ?? false,
+    isCurrent: season?.isCurrent ?? false,
   });
 
-  // Get user ID from localStorage
-  const getUserId = () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    return user.id || user._id || user.userId;
-  };
-
-  // Load seasons on component mount
   useEffect(() => {
-    loadSeasons();
-  }, []);
+    if (isSuperAdmin && (!companiesReady || !selectedCompanyId)) {
+      return;
+    }
 
-  const loadSeasons = async () => {
+    const requestId = ++loadRequestIdRef.current;
+    let cancelled = false;
+
+    const loadSeasons = async () => {
+      setLoading(true);
+      try {
+        const response = await seasonAPI.getAll();
+        if (cancelled || requestId !== loadRequestIdRef.current) return;
+
+        const list = Array.isArray(response?.data) ? response.data : [];
+        setSeasons(list.map(normalizeSeason));
+      } catch (error) {
+        if (cancelled || requestId !== loadRequestIdRef.current) return;
+        console.error("Error loading seasons:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to load seasons",
+        });
+      } finally {
+        if (!cancelled && requestId === loadRequestIdRef.current) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSeasons();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSuperAdmin, selectedCompanyId, companiesReady]);
+
+  const reloadSeasons = async () => {
+    const requestId = ++loadRequestIdRef.current;
     setLoading(true);
     try {
-      const userId = getUserId();
-      // TODO: Replace with actual season API when available
-      // For now, using mock data
-      const mockSeasons = [
-        {
-          _id: "1",
-          seasonName: "2024/2025 Season",
-          seasonStartDate: "2024-09-01",
-          seasonEndDate: "2025-06-30",
-          isHidden: false,
-          isLocked: false,
-          isDefault: true,
-          isCurrent: true,
-        },
-        {
-          _id: "2",
-          seasonName: "2023/2024 Season",
-          seasonStartDate: "2023-09-01",
-          seasonEndDate: "2024-06-30",
-          isHidden: false,
-          isLocked: true,
-          isDefault: false,
-          isCurrent: false,
-        },
-      ];
-      setSeasons(mockSeasons);
+      const response = await seasonAPI.getAll();
+      if (requestId !== loadRequestIdRef.current) return;
+
+      const list = Array.isArray(response?.data) ? response.data : [];
+      setSeasons(list.map(normalizeSeason));
     } catch (error) {
+      if (requestId !== loadRequestIdRef.current) return;
       console.error("Error loading seasons:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to load seasons",
+      Swal.fire({ icon: "error", title: "Error", text: "Failed to load seasons" });
+    } finally {
+      if (requestId === loadRequestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  };
+
+  const openCreateModal = () => {
+    setModalMode("create");
+    setForm(EMPTY_FORM);
+    setShowSeasonModal(true);
+  };
+
+  const openEditModal = async (season) => {
+    setModalMode("edit");
+    setShowSeasonModal(true);
+    setLoading(true);
+    try {
+      const response = await seasonAPI.getById(season._id);
+      const details = normalizeSeason(response?.data || season);
+      setForm({
+        seasonId: details._id,
+        seasonName: details.seasonName,
+        seasonStartDate: details.seasonStartDate,
+        seasonEndDate: details.seasonEndDate,
+        isHidden: details.isHidden,
+        isLocked: details.isLocked,
+      });
+    } catch {
+      setForm({
+        seasonId: season._id,
+        seasonName: season.seasonName,
+        seasonStartDate: season.seasonStartDate,
+        seasonEndDate: season.seasonEndDate,
+        isHidden: season.isHidden,
+        isLocked: season.isLocked,
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEdit = (season) => {
-    setEditingId(season._id);
-    setEditForm({
-      seasonId: season._id,
-      seasonName: season.seasonName,
-      seasonStartDate: season.seasonStartDate,
-      seasonEndDate: season.seasonEndDate,
-      isHidden: season.isHidden,
-      isLocked: season.isLocked,
-      isDefault: season.isDefault,
-    });
+  const validateForm = () => {
+    if (!form.seasonName.trim()) {
+      Swal.fire({ icon: "warning", title: "Validation Error", text: "Season name is required" });
+      return false;
+    }
+    if (!form.seasonStartDate || !form.seasonEndDate) {
+      Swal.fire({ icon: "warning", title: "Validation Error", text: "Start and end dates are required" });
+      return false;
+    }
+    if (new Date(form.seasonStartDate) >= new Date(form.seasonEndDate)) {
+      Swal.fire({ icon: "warning", title: "Validation Error", text: "End date must be after start date" });
+      return false;
+    }
+    return true;
   };
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditForm({
-      seasonId: null,
-      seasonName: "",
-      seasonStartDate: "",
-      seasonEndDate: "",
-      isHidden: false,
-      isLocked: false,
-      isDefault: false,
-    });
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editForm.seasonName.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validation Error",
-        text: "Season name is required",
-      });
-      return;
-    }
-
-    if (!editForm.seasonStartDate || !editForm.seasonEndDate) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validation Error",
-        text: "Start and end dates are required",
-      });
-      return;
-    }
-
-    if (new Date(editForm.seasonStartDate) >= new Date(editForm.seasonEndDate)) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validation Error",
-        text: "End date must be after start date",
-      });
-      return;
-    }
+  const submitSeason = async () => {
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
-      const userId = getUserId();
-      // TODO: Replace with actual season API when available
-      // const response = await seasonAPI.save({ ...editForm, userId });
-
-      // Mock update
-      setSeasons(seasons.map(s =>
-        s._id === editForm.seasonId
-          ? { ...s, ...editForm }
-          : editForm.isDefault && s.isDefault
-            ? { ...s, isDefault: false }
-            : s
-      ));
-
-      Swal.fire({
-        icon: "success",
-        title: "Saved!",
-        text: "Season has been updated successfully",
-        timer: 2000,
-        showConfirmButton: false,
+      await seasonAPI.save({
+        ...(form.seasonId ? { seasonId: form.seasonId } : {}),
+        seasonName: form.seasonName.trim(),
+        startDate: form.seasonStartDate,
+        endDate: form.seasonEndDate,
+        hidden: form.isHidden,
+        locked: form.isLocked,
       });
 
-      handleCancelEdit();
+      await reloadSeasons();
+      setShowSeasonModal(false);
+      setForm(EMPTY_FORM);
+
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: modalMode === "create" ? "Created" : "Updated",
+        text:
+          modalMode === "create"
+            ? "Season created successfully"
+            : "Season updated successfully",
+        timer: 1800,
+        showConfirmButton: false,
+      });
     } catch (error) {
       console.error("Error saving season:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to save season",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateSeason = async () => {
-    if (!editForm.seasonName.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validation Error",
-        text: "Season name is required",
-      });
-      return;
-    }
-
-    if (!editForm.seasonStartDate || !editForm.seasonEndDate) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validation Error",
-        text: "Start and end dates are required",
-      });
-      return;
-    }
-
-    if (new Date(editForm.seasonStartDate) >= new Date(editForm.seasonEndDate)) {
-      Swal.fire({
-        icon: "warning",
-        title: "Validation Error",
-        text: "End date must be after start date",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const userId = getUserId();
-      // TODO: Replace with actual season API when available
-      // const response = await seasonAPI.save({ ...editForm, userId });
-
-      // Mock create
-      const newSeason = {
-        _id: Date.now().toString(),
-        ...editForm,
-        isCurrent: false,
-      };
-
-      setSeasons([...seasons.map(s =>
-        editForm.isDefault ? { ...s, isDefault: false } : s
-      ), newSeason]);
-
-      Swal.fire({
-        icon: "success",
-        title: "Created!",
-        text: "Season has been created successfully",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-
-      setShowCreateForm(false);
-      setEditForm({
-        seasonId: null,
-        seasonName: "",
-        seasonStartDate: "",
-        seasonEndDate: "",
-        isHidden: false,
-        isLocked: false,
-        isDefault: false,
-      });
-    } catch (error) {
-      console.error("Error creating season:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to create season",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: "Failed to save season" });
     } finally {
       setLoading(false);
     }
   };
 
   const toggleStatus = async (seasonId, field) => {
-    const season = seasons.find(s => s._id === seasonId);
+    const season = seasons.find((s) => s._id === seasonId);
+    if (!season) return;
 
-    // Prevent unlocking current season
     if (field === "isLocked" && season.isCurrent && season.isLocked) {
       Swal.fire({
         icon: "warning",
@@ -249,358 +262,169 @@ export default function Seasons() {
 
     setLoading(true);
     try {
-      // TODO: Replace with actual season API when available
-      // await seasonAPI.updateStatus({ seasonId, field, value: !season[field] });
-
-      setSeasons(seasons.map(s =>
-        s._id === seasonId ? { ...s, [field]: !s[field] } : s
-      ));
-
-      Swal.fire({
-        icon: "success",
-        title: "Updated!",
-        text: "Status has been updated successfully",
-        timer: 1500,
-        showConfirmButton: false,
+      await seasonAPI.save({
+        seasonId,
+        seasonName: season.seasonName,
+        startDate: season.seasonStartDate,
+        endDate: season.seasonEndDate,
+        hidden: field === "isHidden" ? !season.isHidden : season.isHidden,
+        locked: field === "isLocked" ? !season.isLocked : season.isLocked,
       });
+      await reloadSeasons();
     } catch (error) {
       console.error("Error updating status:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to update status",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: "Failed to update status" });
     } finally {
       setLoading(false);
     }
   };
 
   const setAsDefault = async (seasonId) => {
-    setLoading(true);
-    try {
-      // TODO: Replace with actual season API when available
-      // await seasonAPI.setDefault({ seasonId });
-
-      setSeasons(seasons.map(s => ({
+    setSeasons((prev) =>
+      prev.map((s) => ({
         ...s,
         isDefault: s._id === seasonId,
-      })));
+      }))
+    );
+  };
 
+  const handleDeleteSeason = async (seasonId) => {
+    const confirmation = await Swal.fire({
+      icon: "warning",
+      title: "Delete Season?",
+      text: "This action cannot be undone.",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+      confirmButtonColor: "#dc2626",
+    });
+    if (!confirmation.isConfirmed) return;
+
+    setLoading(true);
+    try {
+      await seasonAPI.deleteById(seasonId);
+      await reloadSeasons();
       Swal.fire({
+        toast: true,
+        position: "top-end",
         icon: "success",
-        title: "Updated!",
-        text: "Default season has been updated",
-        timer: 1500,
+        title: "Deleted",
+        text: "Season deleted successfully.",
+        timer: 1800,
         showConfirmButton: false,
       });
     } catch (error) {
-      console.error("Error setting default:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to set default season",
-      });
+      console.error("Error deleting season:", error);
+      Swal.fire({ icon: "error", title: "Error", text: "Failed to delete season" });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-            <Calendar className="mr-2" size={24} />
-            Season Management
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage your league seasons, dates, and settings
-          </p>
-        </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-4 py-2 bg-[#00ADE5] text-white rounded-md hover:bg-[#008FC5] flex items-center"
-        >
-          <Plus size={18} className="mr-1" />
-          Create Season
-        </button>
-      </div>
+    <div className="space-y-6">
+      <SetupTabHeader
+        title="Seasons"
+        description="Define league seasons with start and end dates. Control visibility, locking, and which season is active for your competitions."
+      >
+        <SetupPrimaryButton onClick={openCreateModal} icon={Plus}>
+          Create season
+        </SetupPrimaryButton>
+      </SetupTabHeader>
 
-      {/* Create Season Form */}
-      {showCreateForm && (
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Create New Season</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Season Name *
-              </label>
-              <input
-                type="text"
-                value={editForm.seasonName}
-                onChange={(e) => setEditForm({ ...editForm, seasonName: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00ADE5]"
-                placeholder="e.g., 2024/2025 Season"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date *
-              </label>
-              <input
-                type="date"
-                value={editForm.seasonStartDate}
-                onChange={(e) => setEditForm({ ...editForm, seasonStartDate: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00ADE5]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                End Date *
-              </label>
-              <input
-                type="date"
-                value={editForm.seasonEndDate}
-                onChange={(e) => setEditForm({ ...editForm, seasonEndDate: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00ADE5]"
-              />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={editForm.isDefault}
-                onChange={(e) => setEditForm({ ...editForm, isDefault: e.target.checked })}
-                className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-              />
-              <label className="ml-2 text-sm text-gray-700">Set as default season</label>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 mt-4">
-            <button
-              onClick={() => {
-                setShowCreateForm(false);
-                setEditForm({
-                  seasonId: null,
-                  seasonName: "",
-                  seasonStartDate: "",
-                  seasonEndDate: "",
-                  isHidden: false,
-                  isLocked: false,
-                  isDefault: false,
-                });
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCreateSeason}
-              disabled={loading}
-              className="px-4 py-2 bg-[#00ADE5] text-white rounded-md hover:bg-[#008FC5] disabled:bg-gray-400"
-            >
-              Create Season
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Seasons Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading && !editingId ? (
-          <div className="p-8 text-center">
-            <div className="text-gray-500">Loading seasons...</div>
-          </div>
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">Loading seasons...</div>
         ) : seasons.length === 0 ? (
           <div className="p-8 text-center">
-            <Calendar className="mx-auto text-gray-400 mb-3" size={48} />
-            <p className="text-gray-500">No seasons found</p>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="mt-4 text-[#00ADE5] hover:underline"
-            >
+            <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#00ADE5]/10">
+              <Calendar className="text-[#00ADE5]" size={28} />
+            </span>
+            <p className="font-medium text-gray-700">No seasons found</p>
+            <button onClick={openCreateModal} className="mt-3 text-sm font-semibold text-[#00ADE5] hover:underline">
               Create your first season
             </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Season Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Start Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    End Date
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Default
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Season Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Start Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">End Date</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">Default</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">Details</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {seasons.map((season) => (
-                  <tr key={season._id} className={season.isCurrent ? "bg-blue-50" : ""}>
-                    {editingId === season._id ? (
-                      <>
-                        <td className="px-6 py-4">
-                          <input
-                            type="text"
-                            value={editForm.seasonName}
-                            onChange={(e) => setEditForm({ ...editForm, seasonName: e.target.value })}
-                            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <input
-                            type="date"
-                            value={editForm.seasonStartDate}
-                            onChange={(e) => setEditForm({ ...editForm, seasonStartDate: e.target.value })}
-                            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <input
-                            type="date"
-                            value={editForm.seasonEndDate}
-                            onChange={(e) => setEditForm({ ...editForm, seasonEndDate: e.target.value })}
-                            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={() => setEditForm({ ...editForm, isHidden: !editForm.isHidden })}
-                              className={`p-1 rounded ${editForm.isHidden ? "text-orange-600" : "text-gray-400"}`}
-                              title={editForm.isHidden ? "Hidden" : "Visible"}
-                            >
-                              {editForm.isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (!season.isCurrent) {
-                                  setEditForm({ ...editForm, isLocked: !editForm.isLocked });
-                                }
-                              }}
-                              className={`p-1 rounded ${editForm.isLocked ? "text-red-600" : "text-gray-400"} ${season.isCurrent && editForm.isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
-                              title={editForm.isLocked ? "Locked" : "Unlocked"}
-                              disabled={season.isCurrent && editForm.isLocked}
-                            >
-                              {editForm.isLocked ? <Lock size={18} /> : <Unlock size={18} />}
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <input
-                            type="checkbox"
-                            checked={editForm.isDefault}
-                            onChange={(e) => setEditForm({ ...editForm, isDefault: e.target.checked })}
-                            className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={handleSaveEdit}
-                              className="p-1 text-green-600 hover:bg-green-50 rounded"
-                              title="Save"
-                            >
-                              <Save size={18} />
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded"
-                              title="Cancel"
-                            >
-                              <X size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium text-gray-900">
-                              {season.seasonName}
-                            </span>
-                            {season.isCurrent && (
-                              <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                                Current
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(season.seasonStartDate).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(season.seasonEndDate).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={() => toggleStatus(season._id, "isHidden")}
-                              className={`p-1 rounded hover:bg-gray-100 ${season.isHidden ? "text-orange-600" : "text-gray-400"}`}
-                              title={season.isHidden ? "Hidden - Click to show" : "Visible - Click to hide"}
-                            >
-                              {season.isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                            <button
-                              onClick={() => toggleStatus(season._id, "isLocked")}
-                              className={`p-1 rounded hover:bg-gray-100 ${season.isLocked ? "text-red-600" : "text-gray-400"} ${season.isCurrent && season.isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
-                              title={
-                                season.isCurrent && season.isLocked
-                                  ? "Current season cannot be unlocked"
-                                  : season.isLocked
-                                    ? "Locked - Click to unlock"
-                                    : "Unlocked - Click to lock"
-                              }
-                              disabled={season.isCurrent && season.isLocked}
-                            >
-                              {season.isLocked ? <Lock size={18} /> : <Unlock size={18} />}
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {season.isDefault ? (
-                            <Star className="inline-block text-yellow-500" size={18} fill="currentColor" />
-                          ) : (
-                            <button
-                              onClick={() => setAsDefault(season._id)}
-                              className="text-gray-400 hover:text-yellow-500"
-                              title="Set as default"
-                            >
-                              <Star size={18} />
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center">
-                            <button
-                              onClick={() => handleEdit(season)}
-                              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                              title="Edit"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    )}
+                  <tr key={season._id} className={season.isCurrent ? "bg-blue-50/60" : "hover:bg-slate-50"}>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <div className="flex items-center">
+                        <span className="text-sm font-semibold text-gray-900">{season.seasonName}</span>
+                        {season.isCurrent && (
+                          <span className="ml-2 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                            Current
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      {new Date(season.seasonStartDate).toLocaleDateString()}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      {new Date(season.seasonEndDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => toggleStatus(season._id, "isHidden")}
+                          className={`rounded p-1 hover:bg-gray-100 ${season.isHidden ? "text-orange-600" : "text-gray-400"}`}
+                        >
+                          {season.isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                        <button
+                          onClick={() => toggleStatus(season._id, "isLocked")}
+                          disabled={season.isCurrent && season.isLocked}
+                          className={`rounded p-1 hover:bg-gray-100 ${season.isLocked ? "text-red-600" : "text-gray-400"} ${season.isCurrent && season.isLocked ? "cursor-not-allowed opacity-50" : ""}`}
+                        >
+                          {season.isLocked ? <Lock size={18} /> : <Unlock size={18} />}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {season.isDefault ? (
+                        <Star className="inline-block text-yellow-500" size={18} fill="currentColor" />
+                      ) : (
+                        <button onClick={() => setAsDefault(season._id)} className="text-gray-400 hover:text-yellow-500">
+                          <Star size={18} />
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <CountBadgeButton
+                        count={getSeasonDetails(season).length}
+                        icon={Calendar}
+                        title="View season details"
+                        allowZeroClick
+                        onClick={() => setViewSeason(season)}
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center gap-2">
+                        <button onClick={() => openEditModal(season)} className="rounded-md p-1 text-blue-600 hover:bg-blue-50">
+                          <Edit2 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSeason(season._id)}
+                          className="rounded-md p-1 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -609,21 +433,141 @@ export default function Seasons() {
         )}
       </div>
 
-      {/* Info Box */}
-      <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <Calendar className="h-5 w-5 text-blue-400" />
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-blue-700">
-              <strong>Note:</strong> The current season cannot be unlocked. Hidden seasons won't appear
-              in public views. Locked seasons prevent modifications to their data. Only one season can
-              be set as the default.
-            </p>
-          </div>
-        </div>
-      </div>
+      <Modal
+        isOpen={showSeasonModal}
+        onClose={() => {
+          setShowSeasonModal(false);
+          setForm(EMPTY_FORM);
+        }}
+        panelClassName="max-w-xl"
+        labelledBy="season-modal-title"
+      >
+            <div className="shrink-0 bg-gradient-to-r from-[#003366] to-[#004080] px-4 py-4 text-white sm:px-6 sm:py-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20 sm:h-10 sm:w-10">
+                    <Calendar size={20} />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 id="season-modal-title" className="text-lg font-bold sm:text-xl">
+                      {modalMode === "create" ? "Create Season" : "Edit Season"}
+                    </h3>
+                    <p className="text-xs text-blue-100">
+                      Add and manage season details in one place.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSeasonModal(false);
+                    setForm(EMPTY_FORM);
+                  }}
+                  className="rounded-lg p-2 text-white hover:bg-white/20"
+                  aria-label="Close season modal"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <div className="border-b bg-slate-50 px-4 py-3 sm:px-6">
+              <h4 className="text-sm font-semibold text-gray-700">
+                Season Information
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 px-4 py-4 sm:px-6 sm:py-5">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">Season Name *</label>
+                <input
+                  type="text"
+                  value={form.seasonName}
+                  onChange={(e) => setForm((prev) => ({ ...prev, seasonName: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#00ADE5]"
+                  placeholder="e.g., Spring Season"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">Start Date *</label>
+                  <input
+                    type="date"
+                    value={form.seasonStartDate}
+                    onChange={(e) => setForm((prev) => ({ ...prev, seasonStartDate: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#00ADE5]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">End Date *</label>
+                  <input
+                    type="date"
+                    value={form.seasonEndDate}
+                    onChange={(e) => setForm((prev) => ({ ...prev, seasonEndDate: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#00ADE5]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6">
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={form.isHidden}
+                    onChange={(e) => setForm((prev) => ({ ...prev, isHidden: e.target.checked }))}
+                  />
+                  Hidden
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={form.isLocked}
+                    onChange={(e) => setForm((prev) => ({ ...prev, isLocked: e.target.checked }))}
+                  />
+                  Locked
+                </label>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
+              <button
+                onClick={() => {
+                  setShowSeasonModal(false);
+                  setForm(EMPTY_FORM);
+                }}
+                className="w-full rounded-xl border-2 border-gray-300 px-5 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 sm:w-auto"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitSeason}
+                disabled={loading}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-5 py-2.5 font-semibold text-white hover:from-[#002244] hover:to-[#003366] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              >
+                <Save size={16} />
+                {modalMode === "create" ? "Create Season" : "Save Changes"}
+              </button>
+            </div>
+      </Modal>
+
+      <ListViewModal
+        isOpen={Boolean(viewSeason)}
+        onClose={() => setViewSeason(null)}
+        title={viewSeason?.seasonName || "Season details"}
+        subtitle="Season configuration overview"
+        labelledBy="season-details-title"
+        items={viewSeason ? getSeasonDetails(viewSeason) : []}
+        emptyIcon={Calendar}
+        emptyTitle="No season details"
+        tableMode
+        tableHeaders={["Property", "Value"]}
+        renderItem={(row) => (
+          <>
+            <td className="px-4 py-3 font-medium text-gray-600">{row.label}</td>
+            <td className="px-4 py-3 text-gray-900">{row.value}</td>
+          </>
+        )}
+      />
     </div>
   );
 }

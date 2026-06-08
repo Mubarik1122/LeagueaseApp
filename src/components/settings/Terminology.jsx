@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 
 export default function Terminology() {
@@ -12,32 +12,36 @@ export default function Terminology() {
   };
 
   const [formData, setFormData] = useState(initialFormState);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      const token = localStorage.getItem("token");
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      const fetchSettings = async () => {
+        const token = localStorage.getItem("token");
 
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-        const result = await response.json();
+          const result = await response.json();
 
-        if (result.errorCode === 0 && result.data?.terminologySettings) {
-          setFormData((prev) => ({
-            ...prev,
-            ...result.data.terminologySettings,
-          }));
+          if (result.errorCode === 0 && result.data?.terminologySettings) {
+            setFormData((prev) => ({
+              ...prev,
+              ...result.data.terminologySettings,
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to load terminology settings", error);
         }
-      } catch (error) {
-        console.error("Failed to load terminology settings", error);
-      }
-    };
+      };
 
-    fetchSettings();
+      fetchSettings();
+    }
   }, []);
 
   const handleChange = (e) => {
@@ -74,6 +78,9 @@ export default function Terminology() {
           title: "Changes Saved!",
           text: "Your terminology settings have been saved.",
           icon: "success",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
           timer: 3000,
         });
       } else {
