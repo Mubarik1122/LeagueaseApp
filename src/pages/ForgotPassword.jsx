@@ -4,6 +4,7 @@ import { KeyRound, Mail } from "lucide-react";
 import Swal from "sweetalert2";
 import { authAPI } from "../services/api";
 import Navbar from "../components/Navbar";
+import PoweredBy4SOV from "../components/PoweredBy4SOV";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -475,17 +476,20 @@ export default function ForgotPassword() {
         </div>
       </main>
 
-      <footer className="py-4 text-center text-sm text-gray-600">
-        <div className="space-x-2">
-          <Link to="/terms" className="hover:text-gray-900">
-            Terms & Conditions
-          </Link>
-          <span>|</span>
-          <Link to="/privacy" className="hover:text-gray-900">
-            Privacy
-          </Link>
-          <span>|</span>
-          <span>Copyright© 2002-2025 - LeagueRepublic</span>
+      <footer className="border-t border-gray-200/80 bg-white/50 py-6 text-center text-sm text-gray-500">
+        <div className="flex flex-col items-center justify-center gap-4 px-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <Link to="/terms" className="hover:text-gray-900 transition-colors">
+              Terms & Conditions
+            </Link>
+            <span className="text-gray-300" aria-hidden>
+              |
+            </span>
+            <Link to="/privacy" className="hover:text-gray-900 transition-colors">
+              Privacy
+            </Link>
+          </div>
+          <PoweredBy4SOV />
         </div>
       </footer>
     </div>

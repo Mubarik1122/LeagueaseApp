@@ -179,7 +179,7 @@ export default function VenueManagement() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
           <button
-            onClick={() => navigate("/admin/setup")}
+            onClick={() => navigate("/dashboard/setup")}
             className="mr-4 p-2 hover:bg-gray-100 rounded-full"
           >
             <ArrowLeft size={20} />

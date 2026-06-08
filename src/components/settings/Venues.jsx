@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 
 const Venues = () => {
@@ -7,29 +7,33 @@ const Venues = () => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.userId;
+  const hasFetched = useRef(false);
 
   // Fetch current setting
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      const fetchSettings = async () => {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-        const result = await res.json();
+          const result = await res.json();
 
-        if (result.errorCode === 0 && result.data) {
-          setDisableVenues(result.data.disableVenues ?? true);
+          if (result.errorCode === 0 && result.data) {
+            setDisableVenues(result.data.disableVenues ?? true);
+          }
+        } catch (error) {
+          console.error("Failed to fetch venues setting:", error);
         }
-      } catch (error) {
-        console.error("Failed to fetch venues setting:", error);
-      }
-    };
+      };
 
-    fetchSettings();
+      fetchSettings();
+    }
   }, []);
 
   const handleSave = async () => {
@@ -52,7 +56,15 @@ const Venues = () => {
       const result = await res.json();
 
       if (res.ok && result.errorCode === 0) {
-        Swal.fire("Saved", "Venue setting saved successfully!", "success");
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "Saved",
+          text: "Venue setting saved successfully!",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       } else {
         Swal.fire("Error", result.errorMessage || "Failed to save", "error");
       }

@@ -104,10 +104,12 @@ export default function Standings() {
       const updateData = {
         tournamentId: selectedTournament,
         userId: userId,
-        tournamentName: tournament?.tournamentName,
-        tournamentType: tournament?.tournamentType,
-        sequence: tournament?.sequence || 0,
-        shortCode: tournament?.shortCode,
+        tournamentName:
+          tournament?.tournamentName ?? tournament?.divisionOrtournamentName,
+        tournamentType:
+          tournament?.tournamentType ?? tournament?.divisionOrTournamentType,
+        sequence: tournament?.sequence ?? 0,
+        shortCode: tournament?.shortCode ?? "",
         ...standingsConfig,
       };
 
@@ -147,7 +149,7 @@ export default function Standings() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
           <button
-            onClick={() => navigate("/admin/setup/competitions")}
+            onClick={() => navigate("/dashboard/setup/competitions")}
             className="mr-4 p-2 hover:bg-gray-100 rounded-full"
           >
             <ArrowLeft size={20} />

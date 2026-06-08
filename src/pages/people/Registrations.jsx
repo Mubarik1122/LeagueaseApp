@@ -113,7 +113,7 @@ export default function Registrations() {
                   in to your bank account, safely and securely.
                 </p>
                 <Link
-                  to="/admin/stripe-setup"
+                  to="/dashboard/stripe-setup"
                   className="mt-2 inline-block text-sm text-[#009ACB] hover:underline"
                 >
                   Find out more about collecting payments online

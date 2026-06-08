@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Menu, Lock, Shield, Users, ClipboardList, Calendar, MapPin } from "lucide-react";
 import clsx from "clsx";
 import Swal from "sweetalert2";
 import ApprovalAndLocking from "./ApprovalAndLocking";
@@ -14,17 +14,19 @@ const sideMenuItems = [
   {
     id: "team-admin",
     label: "Team Admin Results and matches options",
+    icon: Users,
   },
-  { id: "approval", label: "Approval and Locking" },
-  { id: "match-officials", label: "Match officials and marks" },
-  { id: "player-role", label: "Player Role Active Dates" },
+  { id: "approval", label: "Approval and Locking", icon: Lock },
+  { id: "match-officials", label: "Match officials and marks", icon: ClipboardList },
+  { id: "player-role", label: "Player Role Active Dates", icon: Calendar },
   {
     id: "people-duplication",
     label: "People duplication and merge default criteria",
+    icon: Users,
   },
-  { id: "player-suspension", label: "Player suspension options" },
-  { id: "venues", label: "Venues" },
-  { id: "match-file", label: "Match File Upload" },
+  { id: "player-suspension", label: "Player suspension options", icon: Shield },
+  { id: "venues", label: "Venues", icon: MapPin },
+  { id: "match-file", label: "Match File Upload", icon: ClipboardList },
 ];
 
 export default function LeagueOptions() {
@@ -47,31 +49,35 @@ export default function LeagueOptions() {
       changeVenue: false,
     },
   });
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const result = await response.json();
-        if (result.errorCode === 0 && result.data) {
-          setFormData((prev) => ({
-            ...prev,
-            ...result.data,
-          }));
-        } else {
-          console.warn("Settings not found or error:", result.errorMessage);
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      const fetchSettings = async () => {
+        const token = localStorage.getItem("token");
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const result = await response.json();
+          if (result.errorCode === 0 && result.data) {
+            setFormData((prev) => ({
+              ...prev,
+              ...result.data,
+            }));
+          } else {
+            console.warn("Settings not found or error:", result.errorMessage);
+          }
+        } catch (error) {
+          console.error("Error fetching settings:", error);
         }
-      } catch (error) {
-        console.error("Error fetching settings:", error);
-      }
-    };
-    fetchSettings();
+      };
+      fetchSettings();
+    }
   }, []);
 
   const handleCheckboxChange = (field) => {
@@ -137,7 +143,15 @@ export default function LeagueOptions() {
 
       const result = await response.json();
       if (response.ok && result.errorCode === 0) {
-        Swal.fire("Success", "Settings saved successfully.", "success");
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "Success",
+          text: "Settings saved successfully.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       } else {
         Swal.fire(
           "Failed",
@@ -265,12 +279,20 @@ export default function LeagueOptions() {
 
       <div
         className={clsx(
-          "md:w-64 md:border-r md:border-gray-200 bg-white",
+          "md:w-72 bg-white md:border-r md:border-gray-200",
           "transition-all duration-300 ease-in-out",
           isSideMenuOpen ? "block" : "hidden md:block"
         )}
       >
-        <div className="p-4 space-y-1">
+        <div className="p-5 space-y-3">
+          <div>
+            <div className="text-sm font-semibold text-gray-900">
+              League Options
+            </div>
+            <div className="text-xs text-gray-500 mt-0.5">
+              Configure how your league behaves
+            </div>
+          </div>
           {sideMenuItems.map((item) => (
             <button
               key={item.id}
@@ -279,13 +301,21 @@ export default function LeagueOptions() {
                 setIsSideMenuOpen(false);
               }}
               className={clsx(
-                "w-full text-left px-4 py-2 rounded-lg text-sm",
+                "w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all duration-150",
                 activeMenuItem === item.id
-                  ? "bg-gray-100 font-medium"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "bg-[#00ADE5]/10 text-[#00ADE5] border-[#00ADE5]/30 font-semibold"
+                  : "bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-200 border-transparent"
               )}
             >
-              {item.label}
+              <span className="flex items-center gap-3">
+                {item.icon
+                  ? React.createElement(item.icon, {
+                      size: 16,
+                      className: "shrink-0",
+                    })
+                  : null}
+                <span className="leading-snug">{item.label}</span>
+              </span>
             </button>
           ))}
         </div>

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { Info } from "lucide-react";
 import Swal from "sweetalert2";
 
 const ApprovalAndLocking = () => {
@@ -11,34 +12,38 @@ const ApprovalAndLocking = () => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.userId;
+  const hasFetched = useRef(false);
 
   // Fetch settings on component load
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const result = await res.json();
-
-        if (result.errorCode === 0 && result.data) {
-          // Pull flat values directly from settings object
-          setFormData({
-            lockMatchStats: result.data.lockMatchStats ?? false,
-            approvalOption: result.data.approvalOption ?? "manualApproveAutoLock",
-            enableLiveResults: result.data.enableLiveResults ?? false,
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      const fetchSettings = async () => {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           });
-        }
-      } catch (err) {
-        console.error("Error fetching settings:", err);
-      }
-    };
 
-    fetchSettings();
+          const result = await res.json();
+
+          if (result.errorCode === 0 && result.data) {
+            // Pull flat values directly from settings object
+            setFormData({
+              lockMatchStats: result.data.lockMatchStats ?? false,
+              approvalOption: result.data.approvalOption ?? "manualApproveAutoLock",
+              enableLiveResults: result.data.enableLiveResults ?? false,
+            });
+          }
+        } catch (err) {
+          console.error("Error fetching settings:", err);
+        }
+      };
+
+      fetchSettings();
+    }
   }, []);
 
   // Save to backend
@@ -60,7 +65,15 @@ const ApprovalAndLocking = () => {
       const result = await res.json();
 
       if (res.ok && result.errorCode === 0) {
-        Swal.fire("Saved", "Settings saved successfully!", "success");
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "Saved",
+          text: "Settings saved successfully!",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       } else {
         Swal.fire("Error", result.errorMessage || "Failed to save", "error");
       }
@@ -76,16 +89,12 @@ const ApprovalAndLocking = () => {
         Approval and Locking
       </h2>
 
-      <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-        <div className="flex">
-          <div className="text-red-500 mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" stroke="currentColor" fill="none" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-          </div>
-          <p className="text-sm text-gray-700">
+      <div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4">
+        <div className="flex gap-3">
+          <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center text-red-500">
+            <Info size={20} strokeWidth={2} aria-hidden />
+          </span>
+          <p className="text-sm leading-relaxed text-gray-700">
             When a result is reported (scoreline and statistics) leagues have control over whether the result appears automatically or needs approval, and whether the stats can be locked.
           </p>
         </div>

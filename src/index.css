@@ -60,3 +60,142 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* Animations for landing page */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out;
+}
+
+/* Modal / popup entrance */
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-content-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-backdrop {
+  animation: modal-backdrop-in 0.22s ease-out forwards;
+}
+
+.animate-modal-content {
+  animation: modal-content-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-modal-backdrop,
+  .animate-modal-content {
+    animation: none;
+  }
+}
+
+/* Signup league flow — react-datepicker (LeagueDetails) */
+.signup-flow-datepicker-calendar.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgb(0 51 102 / 0.18);
+  overflow: hidden;
+}
+
+.signup-flow-datepicker-calendar .react-datepicker__header {
+  background: linear-gradient(135deg, #003366 0%, #004080 100%);
+  border-bottom: none;
+  padding-top: 0.65rem;
+  border-radius: 0;
+}
+
+.signup-flow-datepicker-calendar .react-datepicker__current-month,
+.signup-flow-datepicker-calendar .react-datepicker__day-name {
+  color: #fff;
+}
+
+.signup-flow-datepicker-calendar .react-datepicker__day-name {
+  opacity: 0.9;
+}
+
+.signup-flow-datepicker-calendar .react-datepicker__navigation {
+  top: 0.65rem;
+}
+
+.signup-flow-datepicker-calendar .react-datepicker__navigation-icon::before {
+  border-color: #fff;
+}
+
+.signup-flow-datepicker-calendar .react-datepicker__day:hover {
+  background-color: #e0f7ff !important;
+  color: #003366 !important;
+  border-radius: 0.5rem;
+}
+
+.signup-flow-datepicker-calendar .react-datepicker__day--selected,
+.signup-flow-datepicker-calendar .react-datepicker__day--keyboard-selected {
+  background: #00ade5 !important;
+  color: #fff !important;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+.signup-flow-datepicker-calendar .react-datepicker__day--today {
+  font-weight: 700;
+  color: #003366;
+}
+
+.signup-flow-datepicker-calendar .react-datepicker__day--disabled {
+  color: #d1d5db !important;
+}
+
+.signup-flow-datepicker-popper {
+  z-index: 100 !important;
+}

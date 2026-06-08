@@ -24,6 +24,7 @@ import LeagueTypeSelection from "./pages/signup/LeagueTypeSelection";
 import SportSelection from "./pages/signup/SportSelection";
 import LeagueDetails from "./pages/signup/LeagueDetails";
 import WebsiteUrl from "./pages/signup/WebsiteUrl";
+import ScheduleLayout from "./pages/schedule/ScheduleLayout";
 import ManageMatches from "./pages/schedule/ManageMatches";
 import SchedulerTools from "./pages/schedule/SchedulerTools";
 import ManuallyCreate from "./pages/schedule/ManuallyCreate";
@@ -73,9 +74,9 @@ function App() {
         <Route path="/signup/league-details" element={<LeagueDetails />} />
         <Route path="/signup/website-url" element={<WebsiteUrl />} />
 
-        {/* 🔹 Protected (Admin) Routes */}
+        {/* 🔹 Protected Dashboard Routes */}
         <Route
-          path="/admin/*"
+          path="/dashboard/*"
           element={
             isAuthenticated ? (
               <div className="min-h-screen bg-gray-50">
@@ -89,21 +90,20 @@ function App() {
                     <Route path="standings" element={<Standings />} />
                     <Route path="venues" element={<VenueManagement />} />
                     <Route path="people*" element={<People />} />
-                    <Route path="schedule" element={<ManageMatches />} />
-                    <Route
-                      path="schedule/scheduler-tools"
-                      element={<SchedulerTools />}
-                    />
-                    <Route
-                      path="schedule/manually-create"
-                      element={<ManuallyCreate />}
-                    />
-                    <Route
-                      path="schedule/mass-delete"
-                      element={<MassDelete />}
-                    />
-                    <Route path="schedule/conflicts" element={<Conflicts />} />
-                    <Route path="schedule/download" element={<Download />} />
+                    <Route path="schedule/*" element={<ScheduleLayout />}>
+                      <Route index element={<ManageMatches />} />
+                      <Route
+                        path="scheduler-tools"
+                        element={<SchedulerTools />}
+                      />
+                      <Route
+                        path="manually-create"
+                        element={<ManuallyCreate />}
+                      />
+                      <Route path="mass-delete" element={<MassDelete />} />
+                      <Route path="conflicts" element={<Conflicts />} />
+                      <Route path="download" element={<Download />} />
+                    </Route>
                     <Route path="results" element={<ResultSummary />} />
                     <Route
                       path="results/standings"

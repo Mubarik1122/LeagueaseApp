@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 
 export default function FacebookSettings() {
@@ -10,33 +10,37 @@ export default function FacebookSettings() {
     autoPostTournamentUpdates: false,
     includeTeamStandings: false,
   });
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      const token = localStorage.getItem("token");
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      const fetchSettings = async () => {
+        const token = localStorage.getItem("token");
 
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/settings`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL}/settings`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          const result = await response.json();
+
+          if (result.errorCode === 0 && result.data?.facebookSettings) {
+            setFormData({ ...formData, ...result.data.facebookSettings });
+          } else {
+            console.warn("Failed to fetch Facebook settings:", result.errorMessage);
           }
-        );
-        const result = await response.json();
-
-        if (result.errorCode === 0 && result.data?.facebookSettings) {
-          setFormData({ ...formData, ...result.data.facebookSettings });
-        } else {
-          console.warn("Failed to fetch Facebook settings:", result.errorMessage);
+        } catch (error) {
+          console.error("Error fetching settings:", error);
         }
-      } catch (error) {
-        console.error("Error fetching settings:", error);
-      }
-    };
+      };
 
-    fetchSettings();
+      fetchSettings();
+    }
   }, []);
 
   const handleChange = (e) => {
@@ -79,7 +83,9 @@ export default function FacebookSettings() {
           title: "Facebook Settings Saved!",
           text: "Your settings have been saved successfully.",
           icon: "success",
-          confirmButtonText: "OK",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
           timer: 3000,
         });
       } else {

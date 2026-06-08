@@ -1,6 +1,109 @@
-import { useState } from "react";
-import { BarChart3, Save } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  BarChart3,
+  Target,
+  HandHelping,
+  Square,
+  ShieldAlert,
+  Shield,
+  Star,
+  Users,
+  Percent,
+  Crosshair,
+  Focus,
+  Flag,
+  AlertTriangle,
+} from "lucide-react";
 import Swal from "sweetalert2";
+import {
+  SetupPageHeader,
+  SettingsSection,
+  SettingsRow,
+  SetupFooter,
+  SetupTip,
+} from "./SetupSettingsUI";
+
+const PLAYER_STATS = [
+  {
+    key: "trackGoals",
+    title: "Goals",
+    description: "Record goals scored by individual players each match.",
+    icon: Target,
+  },
+  {
+    key: "trackAssists",
+    title: "Assists",
+    description: "Track players who assisted goal-scoring opportunities.",
+    icon: HandHelping,
+  },
+  {
+    key: "trackYellowCards",
+    title: "Yellow cards",
+    description: "Log cautions issued during matches for discipline reports.",
+    icon: Square,
+  },
+  {
+    key: "trackRedCards",
+    title: "Red cards",
+    description: "Record dismissals and automatic suspension triggers.",
+    icon: ShieldAlert,
+  },
+  {
+    key: "trackCleanSheets",
+    title: "Clean sheets",
+    description: "Track goalkeeper shutouts when no goals are conceded.",
+    icon: Shield,
+  },
+  {
+    key: "trackPlayerOfMatch",
+    title: "Player of the match",
+    description: "Allow officials to nominate a standout performer per game.",
+    icon: Star,
+  },
+];
+
+const MATCH_STATS = [
+  {
+    key: "trackAttendance",
+    title: "Attendance",
+    description: "Capture spectator or participant turnout for each fixture.",
+    icon: Users,
+  },
+  {
+    key: "trackPossession",
+    title: "Possession",
+    description: "Store ball possession percentages for tactical analysis.",
+    icon: Percent,
+  },
+  {
+    key: "trackShots",
+    title: "Total shots",
+    description: "Count all shot attempts including blocked and off-target efforts.",
+    icon: Crosshair,
+  },
+  {
+    key: "trackShotsOnTarget",
+    title: "Shots on target",
+    description: "Measure attacking threat with shots requiring a save or goal.",
+    icon: Focus,
+  },
+  {
+    key: "trackCorners",
+    title: "Corners",
+    description: "Track corner kicks awarded during each match.",
+    icon: Flag,
+  },
+  {
+    key: "trackFouls",
+    title: "Fouls",
+    description: "Record fouls committed for fairness and discipline insights.",
+    icon: AlertTriangle,
+  },
+];
+
+function countEnabled(config, items) {
+  return items.filter((item) => config[item.key]).length;
+}
 
 export default function StatisticSetup() {
   const [config, setConfig] = useState({
@@ -16,20 +119,38 @@ export default function StatisticSetup() {
     trackShotsOnTarget: false,
     trackCorners: false,
     trackFouls: false,
-    customStats: [],
   });
 
   const [loading, setLoading] = useState(false);
 
+  const playerEnabled = useMemo(
+    () => countEnabled(config, PLAYER_STATS),
+    [config]
+  );
+  const matchEnabled = useMemo(
+    () => countEnabled(config, MATCH_STATS),
+    [config]
+  );
+  const totalEnabled = playerEnabled + matchEnabled;
+
+  const setFlag = (key, value) =>
+    setConfig((prev) => ({ ...prev, [key]: value }));
+
+  const setGroup = (items, value) =>
+    setConfig((prev) =>
+      items.reduce((acc, item) => ({ ...acc, [item.key]: value }), prev)
+    );
+
   const handleSave = async () => {
     setLoading(true);
     try {
-      // TODO: Integrate with actual statistics API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       Swal.fire({
+        toast: true,
+        position: "top-end",
         icon: "success",
-        title: "Saved!",
+        title: "Saved",
         text: "Statistics configuration has been saved successfully",
         timer: 2000,
         showConfirmButton: false,
@@ -47,169 +168,72 @@ export default function StatisticSetup() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-          <BarChart3 className="mr-2" size={24} />
-          Statistic Setup
-        </h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Configure which statistics to track for your league
-        </p>
+    <div className="space-y-6">
+      <SetupPageHeader
+        title="Statistic Setup"
+        description="Define which player and match metrics your league collects. A focused setup keeps reporting accurate without slowing down results entry."
+        stats={[
+          { label: "Total active", value: totalEnabled },
+          { label: "Player stats", value: `${playerEnabled}/${PLAYER_STATS.length}` },
+          { label: "Match stats", value: `${matchEnabled}/${MATCH_STATS.length}` },
+          {
+            label: "Coverage",
+            value: `${Math.round((totalEnabled / (PLAYER_STATS.length + MATCH_STATS.length)) * 100)}%`,
+          },
+        ]}
+      />
+
+      <div className="space-y-6">
+        <SettingsSection
+          icon={Target}
+          title="Player statistics"
+          subtitle="Individual performance metrics recorded per player"
+          enabledCount={playerEnabled}
+          totalCount={PLAYER_STATS.length}
+          onEnableAll={() => setGroup(PLAYER_STATS, true)}
+          onDisableAll={() => setGroup(PLAYER_STATS, false)}
+        >
+          {PLAYER_STATS.map((item) => (
+            <SettingsRow
+              key={item.key}
+              icon={item.icon}
+              title={item.title}
+              description={item.description}
+              checked={config[item.key]}
+              onChange={(value) => setFlag(item.key, value)}
+            />
+          ))}
+        </SettingsSection>
+
+        <SettingsSection
+          icon={BarChart3}
+          title="Match statistics"
+          subtitle="Team-level metrics captured once per fixture"
+          enabledCount={matchEnabled}
+          totalCount={MATCH_STATS.length}
+          onEnableAll={() => setGroup(MATCH_STATS, true)}
+          onDisableAll={() => setGroup(MATCH_STATS, false)}
+        >
+          {MATCH_STATS.map((item) => (
+            <SettingsRow
+              key={item.key}
+              icon={item.icon}
+              title={item.title}
+              description={item.description}
+              checked={config[item.key]}
+              onChange={(value) => setFlag(item.key, value)}
+            />
+          ))}
+        </SettingsSection>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Player Statistics</h3>
-        <div className="space-y-3 mb-6">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackGoals}
-              onChange={(e) => setConfig({ ...config, trackGoals: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Goals</span>
-          </label>
+      <SetupFooter onSave={handleSave} loading={loading} />
 
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackAssists}
-              onChange={(e) => setConfig({ ...config, trackAssists: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Assists</span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackYellowCards}
-              onChange={(e) => setConfig({ ...config, trackYellowCards: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Yellow Cards</span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackRedCards}
-              onChange={(e) => setConfig({ ...config, trackRedCards: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Red Cards</span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackCleanSheets}
-              onChange={(e) => setConfig({ ...config, trackCleanSheets: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Clean Sheets (Goalkeepers)</span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackPlayerOfMatch}
-              onChange={(e) => setConfig({ ...config, trackPlayerOfMatch: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Player of the Match</span>
-          </label>
-        </div>
-
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 mt-6">Match Statistics</h3>
-        <div className="space-y-3 mb-6">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackAttendance}
-              onChange={(e) => setConfig({ ...config, trackAttendance: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Attendance</span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackPossession}
-              onChange={(e) => setConfig({ ...config, trackPossession: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Possession (%)</span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackShots}
-              onChange={(e) => setConfig({ ...config, trackShots: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Total Shots</span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackShotsOnTarget}
-              onChange={(e) => setConfig({ ...config, trackShotsOnTarget: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Shots on Target</span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackCorners}
-              onChange={(e) => setConfig({ ...config, trackCorners: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Corners</span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={config.trackFouls}
-              onChange={(e) => setConfig({ ...config, trackFouls: e.target.checked })}
-              className="h-4 w-4 text-[#00ADE5] focus:ring-[#00ADE5] border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">Track Fouls</span>
-          </label>
-        </div>
-
-        <div className="border-t pt-6 flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="px-6 py-2 bg-[#00ADE5] text-white rounded-md hover:bg-[#008FC5] disabled:bg-gray-400 flex items-center"
-          >
-            <Save size={18} className="mr-1" />
-            {loading ? "Saving..." : "Save Configuration"}
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <BarChart3 className="h-5 w-5 text-blue-400" />
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-blue-700">
-              <strong>Tip:</strong> Enable only the statistics that are relevant to your league.
-              Too many statistics can make data entry more time-consuming.
-            </p>
-          </div>
-        </div>
-      </div>
+      <SetupTip>
+        <strong className="font-semibold text-gray-800">Recommendation:</strong>{" "}
+        Start with core stats (goals, cards, assists) and add advanced metrics
+        only when your officials can reliably capture them every week.
+      </SetupTip>
     </div>
   );
 }

@@ -196,7 +196,7 @@ export default function Teams() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
           <button
-            onClick={() => navigate("/admin/setup/competitions")}
+            onClick={() => navigate("/dashboard/setup/competitions")}
             className="mr-4 p-2 hover:bg-gray-100 rounded-full"
           >
             <ArrowLeft size={20} />
@@ -431,7 +431,7 @@ export default function Teams() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => navigate("/admin/venues")}
+                      onClick={() => navigate("/dashboard/venues")}
                       className="mt-2 text-sm text-blue-600 hover:underline"
                     >
                       Go to Venue Management

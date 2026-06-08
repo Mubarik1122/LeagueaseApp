@@ -1,19 +1,49 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { tournamentAPI, teamAPI, playerAPI, matchAPI } from '../services/api';
+
+function normalizeTournamentList(data) {
+  if (Array.isArray(data)) return data;
+  if (data == null) return [];
+  if (typeof data === 'object') return [data];
+  return [];
+}
 
 export const useTournament = () => {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const fetchGuardRef = useRef({
+    inFlightUserId: null,
+    lastCallUserId: null,
+    lastCallAt: 0,
+  });
 
-  const fetchTournaments = async (userId) => {
+  const fetchTournaments = async (userId, options = {}) => {
+    if (!userId) return;
+    const force = Boolean(options.force);
+
+    // React 18 StrictMode (dev) can invoke effects twice.
+    // Avoid duplicate API calls for the same userId in quick succession.
+    const now = Date.now();
+    const guard = fetchGuardRef.current;
+    const isInFlightSameUser = guard.inFlightUserId === userId;
+    const isSameUserRecent =
+      guard.lastCallUserId === userId && now - guard.lastCallAt < 1200;
+
+    if (!force && isInFlightSameUser) return;
+    if (!force && isSameUserRecent) return;
+
+    guard.inFlightUserId = userId;
+    guard.lastCallUserId = userId;
+    guard.lastCallAt = now;
+
     setLoading(true);
     setError(null);
     
     try {
       const response = await tournamentAPI.getByUserId(userId);
-      if (response.errorCode === 0) {
-        setTournaments(response.data || []);
+      if (Number(response.errorCode) === 0) {
+        setTournaments(normalizeTournamentList(response.data));
       } else {
         setError(response.errorMessage);
       }
@@ -21,6 +51,7 @@ export const useTournament = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+      fetchGuardRef.current.inFlightUserId = null;
     }
   };
 
@@ -28,7 +59,6 @@ export const useTournament = () => {
     try {
       const response = await tournamentAPI.save(tournamentData);
       if (response.errorCode === 0) {
-        // Refresh tournaments list
         if (tournamentData.userId) {
           await fetchTournaments(tournamentData.userId);
         }
@@ -55,12 +85,16 @@ export const useTeam = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchTeams = async (userId, tournamentId) => {
+  const fetchTeams = async (userId, tournamentId, options) => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await teamAPI.getByUserIdAndTournamentId(userId, tournamentId);
+      const response = await teamAPI.getByUserIdAndTournamentId(
+        userId,
+        tournamentId,
+        options
+      );
       if (response.errorCode === 0) {
         setTeams(response.data || []);
       } else {
