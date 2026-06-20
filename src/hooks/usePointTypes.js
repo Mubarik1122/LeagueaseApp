@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { matchAPI } from "../services/api";
 import { useCompanyContext } from "../context/CompanyContext";
+import { PREDEFINED_POINT_TYPES } from "../constants/predefinedPointTypes";
 
 export function normalizePointType(item) {
   return {
@@ -20,9 +21,9 @@ export function usePointTypes(userId) {
     useCompanyContext();
 
   const [pointTypes, setPointTypes] = useState([]);
-  const [predefinedTypes, setPredefinedTypes] = useState([]);
+  const predefinedTypes = PREDEFINED_POINT_TYPES;
   const [loading, setLoading] = useState(true);
-  const [predefinedLoading, setPredefinedLoading] = useState(true);
+  const predefinedLoading = false;
   const [error, setError] = useState(null);
 
   const loadPointTypes = useCallback(async () => {
@@ -56,25 +57,9 @@ export function usePointTypes(userId) {
     }
   }, [userId, isSuperAdmin, selectedCompanyId, companiesReady]);
 
-  const loadPredefinedTypes = useCallback(async () => {
-    setPredefinedLoading(true);
-    try {
-      const response = await matchAPI.getPredefinedPointTypes();
-      setPredefinedTypes(Array.isArray(response?.data) ? response.data : []);
-    } catch {
-      setPredefinedTypes([]);
-    } finally {
-      setPredefinedLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     loadPointTypes();
   }, [loadPointTypes]);
-
-  useEffect(() => {
-    loadPredefinedTypes();
-  }, [loadPredefinedTypes]);
 
   return {
     pointTypes,

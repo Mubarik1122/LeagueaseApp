@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ChevronDown, Settings2 } from "lucide-react";
 import clsx from "clsx";
 
@@ -51,10 +52,36 @@ const tabButtonClass = (isActive) =>
       : "text-gray-500 hover:bg-slate-50 hover:text-[#003366]"
   );
 
+const SETUP_TAB_IDS = new Set(mainTabs.map((tab) => tab.id));
+
 export default function Setup() {
-  const [activeMainTab, setActiveMainTab] = useState("settings");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const [activeMainTab, setActiveMainTab] = useState(() =>
+    tabParam && SETUP_TAB_IDS.has(tabParam) ? tabParam : "settings"
+  );
   const [activeSettingsTab, setActiveSettingsTab] = useState("league");
   const [isTabsOpen, setIsTabsOpen] = useState(false);
+
+  useEffect(() => {
+    if (tabParam && SETUP_TAB_IDS.has(tabParam)) {
+      setActiveMainTab(tabParam);
+    }
+  }, [tabParam]);
+
+  const handleMainTabChange = (tabId) => {
+    setActiveMainTab(tabId);
+    const nextParams = new URLSearchParams(searchParams);
+    if (tabId === "settings") {
+      nextParams.delete("tab");
+    } else {
+      nextParams.set("tab", tabId);
+    }
+    if (tabId !== "competitions") {
+      nextParams.delete("manage");
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
 
   // Get the active component to render
   const getActiveComponent = () => {
@@ -96,7 +123,7 @@ export default function Setup() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveMainTab(tab.id)}
+              onClick={() => handleMainTabChange(tab.id)}
               className={tabButtonClass(activeMainTab === tab.id)}
             >
               {tab.label}

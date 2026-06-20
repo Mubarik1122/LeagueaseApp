@@ -1,0 +1,20 @@
+/** Local catalog for Statistic Setup — mirrors backend defaults (no API required). */
+export const PREDEFINED_POINT_TYPES = [
+  { label: "Points", category: "Points" },
+  { label: "3 Pointers", category: "Points" },
+  { label: "Assists", category: "Assists" },
+  { label: "Steals", category: "Steals" },
+  { label: "Rebounds", category: "Rebounds" },
+  { label: "Offensive Rebounds", category: "Rebounds" },
+  { label: "Defensive Rebounds", category: "Rebounds" },
+  { label: "Blocked Shots", category: "Blocked Shots" },
+  { label: "Fouls", category: "Fouls" },
+  { label: "Free Throws Attempted", category: "Free Throws Attempted" },
+  { label: "Free Throws Made", category: "Free Throws Made" },
+  { label: "Free Throws Scored", category: "Points" },
+  { label: "Turnovers", category: "Turnovers" },
+  { label: "Attempts on Goal", category: "Attempts" },
+  { label: "Goals", category: "Goals" },
+  { label: "MVP", category: "MVP", isCheckbox: true },
+  { label: "Appearances", category: "Appearances", isCheckbox: true },
+];

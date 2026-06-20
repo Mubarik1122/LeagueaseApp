@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import {
   Plus,
@@ -14,6 +15,8 @@ import {
   Unlink,
   X,
   Save,
+  Shield,
+  Sparkles,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import CreateDivisionModal from "../components/CreateDivisionModal";
@@ -127,6 +130,31 @@ function teamRowId(t) {
   return id != null ? String(id) : "";
 }
 
+const TEAM_AVATAR_GRADIENTS = [
+  "from-[#003366] to-[#004080]",
+  "from-[#00ADE5] to-[#0088cc]",
+  "from-[#004080] to-[#00ADE5]",
+  "from-[#002244] to-[#003366]",
+  "from-[#0088cc] to-[#003366]",
+  "from-[#004080] to-[#005a9e]",
+];
+
+function teamInitials(team) {
+  const code = team?.shortCode?.trim();
+  if (code) return code.slice(0, 2).toUpperCase();
+  const name = team?.teamName ?? team?.name ?? "?";
+  return name.slice(0, 2).toUpperCase();
+}
+
+function teamAvatarGradient(team) {
+  const seed = team?.shortCode ?? team?.teamName ?? team?.name ?? "";
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash + seed.charCodeAt(i)) % TEAM_AVATAR_GRADIENTS.length;
+  }
+  return TEAM_AVATAR_GRADIENTS[hash];
+}
+
 /** For saveTeam: API may return populated venue objects; payload needs id strings. */
 function normalizeVenueIdsForTeamSave(venueIds) {
   if (!Array.isArray(venueIds)) return [];
@@ -199,13 +227,6 @@ function teamNameInitials(name) {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }
-
-const TEAM_AVATAR_GRADIENTS = [
-  "from-[#003366] to-[#004080]",
-  "from-[#00ADE5] to-[#0088cc]",
-  "from-[#004080] to-[#005a9e]",
-  "from-[#002244] to-[#003366]",
-];
 
 function TeamCountButton({ competition, onViewTeams }) {
   const count = Number(competition.teams) || 0;
@@ -317,6 +338,8 @@ const TEAM_FILTER = {
 };
 
 export default function Competitions() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const manageDivisionId = searchParams.get("manage");
   const { tournaments, loading, error, fetchTournaments, saveTournament } =
     useTournament();
   const [competitions, setCompetitions] = useState([]);
@@ -334,7 +357,9 @@ export default function Competitions() {
   const [divisionSaving, setDivisionSaving] = useState(false);
   const [divisionDeleting, setDivisionDeleting] = useState(false);
   const [divisionTeams, setDivisionTeams] = useState([]);
+  const [summaryDivisionTeams, setSummaryDivisionTeams] = useState([]);
   const [divisionTeamsLoading, setDivisionTeamsLoading] = useState(false);
+  const [summaryTeamsLoading, setSummaryTeamsLoading] = useState(false);
   const [divisionTeamsError, setDivisionTeamsError] = useState(null);
   const [bulkTeamRows, setBulkTeamRows] = useState(() => [emptyBulkTeamRow()]);
   const [bulkTeamsSaving, setBulkTeamsSaving] = useState(false);
@@ -466,26 +491,55 @@ export default function Competitions() {
     }
   };
 
-  const handleManage = (competition) => {
+  const openManageCompetition = useCallback((competition) => {
     const divId = getManagedDivisionId(competition);
-    if (!divId) {
+    if (!divId) return false;
+    setManagingCompetition(competition);
+    setActiveManageTab("teams");
+    setActiveTeamTab("existing");
+    setDivisionForm({ ...initialDivisionForm });
+    setDivisionDetailError(null);
+    setBulkTeamRows([emptyBulkTeamRow()]);
+    setDivisionTeams([]);
+    setSummaryDivisionTeams([]);
+    setDivisionTeamsError(null);
+    setTeamListFilter(TEAM_FILTER.IN_DIVISION);
+    setSelectedTeamIds([]);
+    return true;
+  }, []);
+
+  const handleManage = (competition) => {
+    if (!openManageCompetition(competition)) {
       Swal.fire({
         icon: "warning",
         title: "Missing division ID",
         text: "This row has no division id from the server. Refresh the list or check the API response.",
       });
+    }
+  };
+
+  useEffect(() => {
+    if (!manageDivisionId || managingCompetition || competitions.length === 0) {
       return;
     }
-    setManagingCompetition(competition);
-    setActiveManageTab("teams");
-    setDivisionForm({ ...initialDivisionForm });
-    setDivisionDetailError(null);
-    setBulkTeamRows([emptyBulkTeamRow()]);
-    setDivisionTeams([]);
-    setDivisionTeamsError(null);
-    setTeamListFilter(TEAM_FILTER.IN_DIVISION);
-    setSelectedTeamIds([]);
-  };
+    const match = competitions.find(
+      (competition) =>
+        String(getManagedDivisionId(competition)) === String(manageDivisionId)
+    );
+    if (!match) return;
+
+    openManageCompetition(match);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("manage");
+    setSearchParams(nextParams, { replace: true });
+  }, [
+    manageDivisionId,
+    managingCompetition,
+    competitions,
+    openManageCompetition,
+    searchParams,
+    setSearchParams,
+  ]);
 
   const managingDivisionId = managingCompetition
     ? getManagedDivisionId(managingCompetition)
@@ -536,10 +590,47 @@ export default function Competitions() {
     }
   }, [managingDivisionId, teamListFilter]);
 
+  const loadSummaryDivisionTeams = useCallback(async () => {
+    if (!managingDivisionId) return;
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const uid = user.userId;
+    if (!uid) return;
+    setSummaryTeamsLoading(true);
+    try {
+      const res = await teamAPI.getByUserIdAndTournament(
+        uid,
+        managingDivisionId,
+        { filter: TEAM_FILTER.IN_DIVISION }
+      );
+      if (res.errorCode === 0) {
+        const raw = res.data;
+        setSummaryDivisionTeams(
+          Array.isArray(raw) ? raw : raw != null ? [raw] : []
+        );
+      } else {
+        setSummaryDivisionTeams([]);
+      }
+    } catch {
+      setSummaryDivisionTeams([]);
+    } finally {
+      setSummaryTeamsLoading(false);
+    }
+  }, [managingDivisionId]);
+
+  const refreshDivisionTeamLists = useCallback(async () => {
+    await Promise.all([loadTeamsInDivision(), loadSummaryDivisionTeams()]);
+  }, [loadTeamsInDivision, loadSummaryDivisionTeams]);
+
   useEffect(() => {
     if (!managingDivisionId || activeManageTab !== "teams") return;
     loadTeamsInDivision();
-  }, [managingDivisionId, activeManageTab, loadTeamsInDivision]);
+    loadSummaryDivisionTeams();
+  }, [
+    managingDivisionId,
+    activeManageTab,
+    loadTeamsInDivision,
+    loadSummaryDivisionTeams,
+  ]);
 
   useEffect(() => {
     if (!managingDivisionId || activeManageTab !== "teams") return;
@@ -777,7 +868,7 @@ export default function Competitions() {
         showConfirmButton: false,
       });
       setBulkTeamRows([emptyBulkTeamRow()]);
-      await loadTeamsInDivision();
+      await refreshDivisionTeamLists();
     } catch (e) {
       Swal.fire({
         icon: "error",
@@ -839,7 +930,7 @@ export default function Competitions() {
         showConfirmButton: false,
       });
       setSelectedTeamIds([]);
-      await loadTeamsInDivision();
+      await refreshDivisionTeamLists();
     } catch (e) {
       Swal.fire({
         icon: "error",
@@ -938,7 +1029,7 @@ export default function Competitions() {
         showConfirmButton: false,
       });
       closeEditTeam();
-      await loadTeamsInDivision();
+      await refreshDivisionTeamLists();
     } catch (e) {
       Swal.fire({
         icon: "error",
@@ -997,7 +1088,7 @@ export default function Competitions() {
         timer: 2000,
         showConfirmButton: false,
       });
-      await loadTeamsInDivision();
+      await refreshDivisionTeamLists();
     } catch (e) {
       Swal.fire({
         icon: "error",
@@ -1205,7 +1296,7 @@ export default function Competitions() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => loadTeamsInDivision()}
+                        onClick={() => refreshDivisionTeamLists()}
                         disabled={divisionTeamsLoading}
                         className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#003366] shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
                       >
@@ -1639,46 +1730,163 @@ export default function Competitions() {
                 )}
               </div>
 
-              <aside className="w-full shrink-0 lg:w-72 xl:w-80">
-                <div className="sticky top-4 overflow-hidden rounded-2xl border border-gray-200/90 bg-gradient-to-b from-white to-gray-50/80 shadow-sm">
-                  <div className="border-b border-gray-100 bg-[#003366]/[0.03] px-5 py-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-[#00ADE5]">
-                      Summary
-                    </p>
-                    <h3 className="mt-1 text-base font-bold text-[#003366]">
-                      {managingCompetition.name}
-                    </h3>
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#00ADE5]/15 text-lg font-bold text-[#003366]">
-                        {divisionTeamsLoading && divisionTeams.length === 0
-                          ? "…"
-                          : divisionTeams.length}
+              <aside className="w-full shrink-0 lg:w-80 xl:w-[22rem]">
+                <div className="sticky top-4 overflow-hidden rounded-2xl border border-gray-200/90 shadow-lg shadow-[#003366]/10">
+                  <div className="relative overflow-hidden bg-gradient-to-br from-[#003366] via-[#004080] to-[#003366] px-5 py-5 text-white">
+                    <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#00ADE5]/25 blur-2xl" />
+                    <div className="pointer-events-none absolute -bottom-6 left-4 h-20 w-20 rounded-full bg-white/10 blur-xl" />
+                    <div className="relative flex items-start gap-3">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm">
+                        <Shield className="h-5 w-5 text-[#00ADE5]" strokeWidth={2.25} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#00ADE5]">
+                          <Sparkles className="h-3 w-3" />
+                          Division roster
+                        </p>
+                        <h3 className="mt-1 truncate text-lg font-bold leading-tight">
+                          {managingCompetition.name}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="relative mt-4 flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
+                      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
+                        <span
+                          className="absolute inset-0 rounded-full border-2 border-[#00ADE5]/40"
+                          aria-hidden
+                        />
+                        <span className="text-xl font-bold tabular-nums">
+                          {summaryTeamsLoading && summaryDivisionTeams.length === 0
+                            ? "—"
+                            : summaryDivisionTeams.length}
+                        </span>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {teamListFilter === TEAM_FILTER.IN_DIVISION &&
-                            "Teams in this division"}
-                          {teamListFilter === TEAM_FILTER.NOT_IN_DIVISION &&
-                            "Not in a division"}
-                          {teamListFilter === TEAM_FILTER.OTHER_DIVISION &&
-                            "Other divisions"}
+                        <p className="text-sm font-semibold text-white">
+                          {summaryDivisionTeams.length === 1
+                            ? "Team assigned"
+                            : "Teams assigned"}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          Count matches the current team filter
+                        <p className="text-xs text-white/70">
+                          Live roster · edit or detach anytime
                         </p>
                       </div>
                     </div>
-                    <p className="mt-4 text-sm leading-relaxed text-gray-600">
-                      {divisionTeams.length === 0
-                        ? teamListFilter === TEAM_FILTER.IN_DIVISION
-                          ? "No teams yet. Open Create new teams to add rows, or refresh after saving."
-                          : "No rows for this filter. Change the filter or tap Refresh."
-                        : teamListFilter === TEAM_FILTER.IN_DIVISION
-                          ? `${divisionTeams.length} team(s) assigned to this division.`
-                          : `${divisionTeams.length} team(s) in this list.`}
-                    </p>
+                  </div>
+
+                  <div className="bg-gradient-to-b from-slate-50/90 to-white p-4">
+                    {summaryTeamsLoading && summaryDivisionTeams.length === 0 ? (
+                      <div className="space-y-3 py-2">
+                        {[0, 1, 2].map((i) => (
+                          <div
+                            key={i}
+                            className="flex animate-pulse items-center gap-3 rounded-xl border border-gray-100 bg-white p-3"
+                          >
+                            <div className="h-10 w-10 rounded-xl bg-gray-200" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-3 w-3/4 rounded bg-gray-200" />
+                              <div className="h-2 w-1/3 rounded bg-gray-100" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : summaryDivisionTeams.length === 0 ? (
+                      <div className="flex flex-col items-center rounded-2xl border border-dashed border-[#00ADE5]/30 bg-[#00ADE5]/[0.04] px-4 py-10 text-center">
+                        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#003366]/10 to-[#00ADE5]/20">
+                          <UsersRound className="h-7 w-7 text-[#00ADE5]" />
+                        </span>
+                        <p className="mt-4 text-sm font-bold text-[#003366]">
+                          No teams yet
+                        </p>
+                        <p className="mt-1 max-w-[14rem] text-xs leading-relaxed text-gray-500">
+                          Add from the left panel or create new teams — they&apos;ll
+                          appear here instantly.
+                        </p>
+                      </div>
+                    ) : (
+                      <ul className="max-h-[min(58vh,26rem)] space-y-2.5 overflow-y-auto pr-0.5 [scrollbar-width:thin]">
+                        {summaryDivisionTeams.map((t, idx) => {
+                          const rowId = teamRowId(t);
+                          const teamName =
+                            t.teamName ?? t.name ?? "Unnamed team";
+                          const isDetaching = teamDetachLoadingId === rowId;
+                          return (
+                            <li
+                              key={teamRecordKey(t, idx)}
+                              className="group relative overflow-hidden rounded-xl border border-gray-100/90 bg-white p-3 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#00ADE5]/25 hover:shadow-md hover:shadow-[#00ADE5]/10"
+                            >
+                              <div
+                                className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#003366] to-[#00ADE5] opacity-0 transition group-hover:opacity-100"
+                                aria-hidden
+                              />
+                              <div className="flex items-center gap-3">
+                                <span
+                                  className={clsx(
+                                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-xs font-bold text-white shadow-sm",
+                                    teamAvatarGradient(t)
+                                  )}
+                                >
+                                  {teamInitials(t)}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-bold text-[#003366]">
+                                    {teamName}
+                                  </p>
+                                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                    <span className="inline-flex rounded-md bg-[#003366]/[0.06] px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-[#003366]">
+                                      {t.shortCode ?? "—"}
+                                    </span>
+                                    {t.isArchived ? (
+                                      <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">
+                                        Archived
+                                      </span>
+                                    ) : (
+                                      <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                        Active
+                                      </span>
+                                    )}
+                                  </div>
+                                  {t.displayName &&
+                                  t.displayName !== teamName ? (
+                                    <p className="mt-1 truncate text-[11px] text-gray-500">
+                                      {t.displayName}
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <div className="flex shrink-0 flex-col gap-1 rounded-xl border border-gray-100 bg-gray-50/80 p-1 opacity-90 transition group-hover:border-[#00ADE5]/20 group-hover:bg-white">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditTeam(t)}
+                                    className="rounded-lg p-1.5 text-[#0088cc] transition hover:bg-[#00ADE5]/10 hover:text-[#003366]"
+                                    title="Edit team"
+                                    aria-label={`Edit ${teamName}`}
+                                  >
+                                    <Edit2 size={15} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDetachTeam(t)}
+                                    disabled={isDetaching}
+                                    className="rounded-lg p-1.5 text-amber-600 transition hover:bg-amber-50 hover:text-amber-800 disabled:opacity-50"
+                                    title="Detach from division"
+                                    aria-label={`Detach ${teamName}`}
+                                  >
+                                    {isDetaching ? (
+                                      <Loader2
+                                        size={15}
+                                        className="animate-spin"
+                                      />
+                                    ) : (
+                                      <Unlink size={15} />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
                 </div>
               </aside>

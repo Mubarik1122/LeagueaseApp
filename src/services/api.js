@@ -830,18 +830,6 @@ export const matchAPI = {
     });
     return handleResponse(response);
   },
-
-  /** GET /match/get-predefined-point-types */
-  getPredefinedPointTypes: async () => {
-    const response = await fetch(
-      `${API_BASE_URL}/match/get-predefined-point-types`,
-      {
-        method: "GET",
-        headers: getAuthHeaders(),
-      }
-    );
-    return handleResponse(response);
-  },
 };
 
 let venueDetailsInflight = null;

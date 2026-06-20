@@ -1,5 +1,11 @@
-import { AlertTriangle, Layers, Trophy, Users } from "lucide-react";
+import { AlertTriangle, Layers, Settings, Trophy, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+
+function manageDivisionPath(competition) {
+  const divisionId = competition.divisionOrTournamentId ?? competition.id;
+  if (!divisionId) return "/dashboard/setup?tab=competitions";
+  return `/dashboard/setup?tab=competitions&manage=${encodeURIComponent(String(divisionId))}`;
+}
 
 export default function CompetitionTable({ competitions }) {
   const safeCompetitions = Array.isArray(competitions) ? competitions : [];
@@ -31,12 +37,15 @@ export default function CompetitionTable({ competitions }) {
               <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider">
                 Code
               </th>
+              <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {safeCompetitions.length === 0 ? (
               <tr>
-                <td colSpan="7" className="px-6 py-14 text-center">
+                <td colSpan="8" className="px-6 py-14 text-center">
                   <div className="mx-auto flex max-w-sm flex-col items-center gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00ADE5]/10">
                       <Trophy className="h-7 w-7 text-[#00ADE5]" />
@@ -70,18 +79,10 @@ export default function CompetitionTable({ competitions }) {
                     </div>
                   </td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#00ADE5]/10 px-2.5 py-1 text-xs font-semibold text-[#0088cc]">
-                        <Users className="h-3.5 w-3.5" />
-                        {comp.teams ?? 0}
-                      </span>
-                      <Link
-                        to="/dashboard/teams"
-                        className="text-xs font-medium text-[#00ADE5] hover:text-[#0088cc] hover:underline"
-                      >
-                        Manage
-                      </Link>
-                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#00ADE5]/10 px-2.5 py-1 text-xs font-semibold text-[#0088cc]">
+                      <Users className="h-3.5 w-3.5" />
+                      {comp.teams ?? 0}
+                    </span>
                   </td>
                   <td className="px-5 py-4">
                     <span className="text-sm font-medium text-gray-600">
@@ -107,7 +108,7 @@ export default function CompetitionTable({ competitions }) {
                   </td>
                   <td className="px-5 py-4">
                     <Link
-                      to="/dashboard/standings"
+                      to="/dashboard/setup?tab=standings"
                       className="inline-flex items-center rounded-lg border border-[#00ADE5]/30 bg-[#00ADE5]/5 px-3 py-1.5 text-xs font-semibold text-[#0088cc] transition-colors hover:border-[#00ADE5] hover:bg-[#00ADE5]/10"
                     >
                       Setup
@@ -117,6 +118,15 @@ export default function CompetitionTable({ competitions }) {
                     <span className="inline-flex rounded-md bg-gray-100 px-2.5 py-1 font-mono text-xs font-semibold text-gray-700">
                       {comp.shortCode || "—"}
                     </span>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <Link
+                      to={manageDivisionPath(comp)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#003366] px-3.5 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#004080]"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                      Manage
+                    </Link>
                   </td>
                 </tr>
               ))
