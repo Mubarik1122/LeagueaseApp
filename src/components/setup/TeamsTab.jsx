@@ -25,7 +25,7 @@ import {
   ITEM_AVATAR_GRADIENTS,
 } from "./CountViewModal";
 import clsx from "clsx";
-import { teamAPI, tournamentAPI, venueAPI, playerAPI } from "../../services/api";
+import { teamAPI, tournamentAPI, venueAPI, playerAPI, companyAPI } from "../../services/api";
 import { useCompanyContext } from "../../context/CompanyContext";
 import FieldAvailabilityHint, {
   getFieldCheckInputClass,
@@ -83,9 +83,65 @@ const EMPTY_PLAYER_FORM = {
   dateOfBirth: "",
   email: "",
   username: "",
+  jerseyNumber: "",
 };
 
 const todayIso = new Date().toISOString().slice(0, 10);
+
+function usernameBaseFromFirstName(firstName) {
+  const slug = String(firstName || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  if (!slug) return "Player";
+  return slug.charAt(0).toUpperCase() + slug.slice(1);
+}
+
+function randomThreeDigits() {
+  return String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+}
+
+function suggestUsernameInBatch(firstName, rows, rowId) {
+  const base = usernameBaseFromFirstName(firstName);
+  const used = new Set(
+    rows
+      .filter((row) => row.id !== rowId)
+      .map((row) => row.username.trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const candidate = `${base}${randomThreeDigits()}`;
+    if (!used.has(candidate.toLowerCase())) {
+      return candidate;
+    }
+  }
+
+  return `${base}${Date.now().toString().slice(-3)}`;
+}
+
+async function resolveUniqueUsername(firstName, reserved = new Set()) {
+  const base = usernameBaseFromFirstName(firstName);
+
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const candidate = `${base}${randomThreeDigits()}`;
+    const normalized = candidate.toLowerCase();
+    if (reserved.has(normalized)) {
+      continue;
+    }
+
+    const response = await companyAPI.checkUserExists({ username: candidate });
+    const exists = Boolean(response?.data?.exists);
+    if (!exists) {
+      reserved.add(normalized);
+      return candidate;
+    }
+  }
+
+  const fallback = `${base}${Date.now().toString().slice(-3)}`;
+  reserved.add(fallback.toLowerCase());
+  return fallback;
+}
 
 const bulkPlayerCellClass =
   "w-full min-w-0 rounded-lg border border-gray-300 px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ADE5]";
@@ -93,6 +149,7 @@ const bulkPlayerCellClass =
 function createPlayerRow() {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    usernameAuto: true,
     ...EMPTY_PLAYER_FORM,
   };
 }
@@ -103,7 +160,8 @@ function isPlayerRowEmpty(row) {
     !row.lastName.trim() &&
     !row.dateOfBirth &&
     !row.email.trim() &&
-    !row.username.trim()
+    !row.username.trim() &&
+    !String(row.jerseyNumber || "").trim()
   );
 }
 
@@ -114,6 +172,9 @@ function validatePlayerRow(row, rowNum) {
   if (!row.lastName.trim()) return `Row ${rowNum}: Last name is required.`;
   if (!row.dateOfBirth) return `Row ${rowNum}: Date of birth is required.`;
   if (!row.email.trim()) return `Row ${rowNum}: Email is required.`;
+  if (!String(row.jerseyNumber || "").trim()) {
+    return `Row ${rowNum}: Jersey number is required.`;
+  }
   if (!row.username.trim()) return `Row ${rowNum}: Username is required.`;
   return null;
 }
@@ -527,12 +588,44 @@ export default function TeamsTab() {
 
   const updatePlayerRow = (rowId, field, value) => {
     setPlayerRows((prev) => {
-      const next = prev.map((row) =>
-        row.id === rowId ? { ...row, [field]: value } : row
-      );
+      let next = prev.map((row) => {
+        if (row.id !== rowId) return row;
 
-      if (field === "email" || field === "username") {
-        syncPlayerFieldChecks(next, field, {
+        const updated = { ...row, [field]: value };
+        if (field === "username") {
+          updated.usernameAuto = false;
+        }
+        if (field === "firstName" && row.usernameAuto) {
+          updated.username = suggestUsernameInBatch(value, prev, rowId);
+        }
+        return updated;
+      });
+
+      if (field === "firstName") {
+        const changedRow = next.find((row) => row.id === rowId);
+        if (changedRow?.usernameAuto) {
+          next = next.map((row) =>
+            row.id === rowId
+              ? {
+                  ...row,
+                  username: suggestUsernameInBatch(
+                    changedRow.firstName,
+                    next,
+                    rowId
+                  ),
+                }
+              : row
+          );
+        }
+      }
+
+      if (field === "email" || field === "username" || field === "firstName") {
+        syncPlayerFieldChecks(next, "email", {
+          scheduleCheck,
+          setLocalCheck,
+          clearCheck,
+        });
+        syncPlayerFieldChecks(next, "username", {
           scheduleCheck,
           setLocalCheck,
           clearCheck,
@@ -954,6 +1047,7 @@ export default function TeamsTab() {
 
     const successes = [];
     const failures = [];
+    const reservedUsernames = new Set();
 
     try {
       for (let index = 0; index < rowsToSave.length; index += 1) {
@@ -961,12 +1055,18 @@ export default function TeamsTab() {
         setPlayerSaveProgress({ current: index + 1, total: rowsToSave.length });
 
         try {
+          const username = row.usernameAuto
+            ? await resolveUniqueUsername(row.firstName, reservedUsernames)
+            : row.username.trim();
+          reservedUsernames.add(username.toLowerCase());
+
           const response = await playerAPI.save({
             firstName: row.firstName.trim(),
             lastName: row.lastName.trim(),
             dateOfBirth: row.dateOfBirth,
             email: row.email.trim(),
-            username: row.username.trim(),
+            username,
+            jerseyNumber: String(row.jerseyNumber).trim(),
             userId,
             teamId,
             sendLoginInvite: false,
@@ -1570,6 +1670,9 @@ export default function TeamsTab() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
                     <KeyRound className="h-3.5 w-3.5 text-blue-100" />
+                    Username auto (Firstname + 3 digits)
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
                     Password matches email
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
@@ -1627,7 +1730,10 @@ export default function TeamsTab() {
                       Email *
                     </th>
                     <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Username *
+                      Jersey #
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Username
                     </th>
                     <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
                       Remove
@@ -1691,15 +1797,32 @@ export default function TeamsTab() {
                       <td className="px-3 py-3">
                         <input
                           type="text"
+                          inputMode="numeric"
+                          value={row.jerseyNumber}
+                          onChange={(e) =>
+                            updatePlayerRow(row.id, "jerseyNumber", e.target.value)
+                          }
+                          className={bulkPlayerCellClass}
+                          placeholder="7"
+                        />
+                      </td>
+                      <td className="px-3 py-3">
+                        <input
+                          type="text"
                           value={row.username}
                           onChange={(e) =>
                             updatePlayerRow(row.id, "username", e.target.value)
                           }
                           className={getFieldCheckInputClass(
-                            bulkPlayerCellClass,
+                            `${bulkPlayerCellClass} bg-slate-50`,
                             getCheck(`${row.id}-username`)
                           )}
-                          placeholder="username"
+                          placeholder="e.g. Ali047"
+                          title={
+                            row.usernameAuto
+                              ? "Auto: capital first name + random 3 digits"
+                              : "Manually edited username"
+                          }
                         />
                         <FieldAvailabilityHint
                           check={getCheck(`${row.id}-username`)}

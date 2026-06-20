@@ -38,12 +38,16 @@ export default function AdminHome() {
   const competitions = useMemo(() => {
     if (!Array.isArray(tournaments)) return [];
 
-    return tournaments.map((tournament, index) => ({
-      id:
+    return tournaments.map((tournament, index) => {
+      const divisionOrTournamentId =
         tournament.divisionOrTournamentId ??
         tournament._id ??
         tournament.id ??
-        `row-${index}`,
+        `row-${index}`;
+
+      return {
+      id: divisionOrTournamentId,
+      divisionOrTournamentId,
       name:
         tournament.tournamentName ||
         tournament.divisionOrtournamentName ||
@@ -61,7 +65,15 @@ export default function AdminHome() {
         tournament.shortCode != null
           ? String(tournament.shortCode).trim()
           : '—',
-    }));
+      type:
+        tournament.tournamentType ||
+        tournament.divisionOrTournamentType ||
+        tournament.type ||
+        'Division',
+      season: tournament.season || 'N/A',
+      status: tournament.status || 'Active',
+    };
+    });
   }, [tournaments]);
 
   const totalTeams = competitions.reduce(

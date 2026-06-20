@@ -32,6 +32,7 @@ import MassDelete from "./pages/schedule/MassDelete";
 import Conflicts from "./pages/schedule/Conflicts";
 import Download from "./pages/schedule/Download";
 import ResultSummary from "./pages/results/ResultSummary";
+import ResultsLayout from "./pages/results/ResultsLayout";
 import StandingsAdjustments from "./pages/results/StandingsAdjustments";
 import StatisticsDownload from "./pages/results/StatisticsDownload";
 import Teams from "./pages/Teams";
@@ -104,15 +105,17 @@ function App() {
                       <Route path="conflicts" element={<Conflicts />} />
                       <Route path="download" element={<Download />} />
                     </Route>
-                    <Route path="results" element={<ResultSummary />} />
-                    <Route
-                      path="results/standings"
-                      element={<StandingsAdjustments />}
-                    />
-                    <Route
-                      path="results/statistics"
-                      element={<StatisticsDownload />}
-                    />
+                    <Route path="results/*" element={<ResultsLayout />}>
+                      <Route index element={<ResultSummary />} />
+                      <Route
+                        path="standings"
+                        element={<StandingsAdjustments />}
+                      />
+                      <Route
+                        path="statistics"
+                        element={<StatisticsDownload />}
+                      />
+                    </Route>
                     <Route path="account" element={<Account />} />
                     <Route path="billing" element={<Billing />} />
                     <Route path="help" element={<Help />} />
