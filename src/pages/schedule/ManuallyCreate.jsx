@@ -29,6 +29,12 @@ import {
   formatMatchDateStatusLabel,
 } from "../../services/api";
 import { mapCompanyMatch } from "../../hooks/useCompanyMatches";
+import {
+  getDatePickerMaxTime,
+  getDatePickerMinTime,
+  getMinDateForMatchCreate,
+  isPastMatchDateTime,
+} from "../../utils/matchScheduleDateTime";
 
 const TABS = [
   { id: "division", label: "Division Matches" },
@@ -46,9 +52,6 @@ const datePickerClass =
 const checkboxClass =
   "h-4 w-4 rounded border-gray-300 text-[#00ADE5] focus:ring-[#00ADE5]/30 disabled:cursor-not-allowed disabled:opacity-40";
 
-const compactSelectClass =
-  "w-full min-w-[9rem] appearance-none rounded-lg border border-gray-200 bg-white py-1.5 pl-2 pr-7 text-xs font-medium text-gray-800 focus:border-[#00ADE5] focus:outline-none focus:ring-2 focus:ring-[#00ADE5]/20";
-
 function mapDivision(t) {
   return {
     id: String(t.divisionOrTournamentId ?? t._id ?? t.id ?? ""),
@@ -57,11 +60,31 @@ function mapDivision(t) {
   };
 }
 
-function mapTeam(team) {
+function mapTeam(team, divisionContext = null) {
   const id = String(team._id ?? team.id ?? team.teamId ?? "");
   const name = team.teamName ?? team.displayName ?? "Unnamed team";
   const code = team.shortCode ?? name.slice(0, 4).toUpperCase();
-  return { id, name, code };
+  const divisionId =
+    divisionContext?.id ??
+    String(
+      team.tournamentId?._id ??
+        team.tournamentId ??
+        team.divisionOrTournamentId ??
+        ""
+    );
+  const divisionName =
+    divisionContext?.name ??
+    team.tournamentName ??
+    team.divisionName ??
+    "";
+  return { id, name, code, divisionId, divisionName };
+}
+
+function teamsInDifferentDivisions(teams, homeId, awayId) {
+  const home = teams.find((team) => team.id === homeId);
+  const away = teams.find((team) => team.id === awayId);
+  if (!home?.divisionId || !away?.divisionId) return true;
+  return home.divisionId !== away.divisionId;
 }
 
 function toDateQueryValue(date) {
@@ -70,6 +93,38 @@ function toDateQueryValue(date) {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+const MATCH_TIME_BUFFER_MINUTES = 48;
+const MATCH_TIME_BUFFER_MS = MATCH_TIME_BUFFER_MINUTES * 60 * 1000;
+
+function hasMatchTimeConflict(selectedDateTime, existingDateTime) {
+  if (!selectedDateTime || !existingDateTime) return false;
+  const selected = new Date(selectedDateTime).getTime();
+  const existing = new Date(existingDateTime).getTime();
+  if (Number.isNaN(selected) || Number.isNaN(existing)) return false;
+  return Math.abs(selected - existing) <= MATCH_TIME_BUFFER_MS;
+}
+
+function formatMatchTimeLabel(dateTime) {
+  if (!dateTime) return "";
+  const date = new Date(dateTime);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function normalizeTeamId(id) {
+  if (id == null || id === "") return "";
+  return String(id);
+}
+
+function getTeamIdFromRef(teamRef) {
+  if (!teamRef) return "";
+  return normalizeTeamId(teamRef.teamId ?? teamRef._id ?? teamRef.id);
 }
 
 function getStoredUserId() {
@@ -89,7 +144,11 @@ function PlaceholderTab({ label }) {
   );
 }
 
-function DivisionMatchesTab() {
+function ManualMatchesPanel({ mode = "division" }) {
+  const isDivision = mode === "division";
+  const isInterDivision = mode === "inter-division";
+  const isOther = mode === "other";
+  const hideDivisionPicker = !isDivision;
   const { isSuperAdmin, selectedCompanyId, companiesReady } =
     useCompanyContext();
   const [viewMode, setViewMode] = useState("grid");
@@ -100,11 +159,10 @@ function DivisionMatchesTab() {
   const [dayMatches, setDayMatches] = useState([]);
   const [matchDateTime, setMatchDateTime] = useState(null);
   const [dateStatus, setDateStatus] = useState("Scheduled");
+  const [sharedVenueId, setSharedVenueId] = useState("");
   const [rowSelections, setRowSelections] = useState({});
-  const [rowVenues, setRowVenues] = useState({});
   const [listHomeTeamId, setListHomeTeamId] = useState("");
   const [listAwayTeamId, setListAwayTeamId] = useState("");
-  const [listVenueId, setListVenueId] = useState("");
   const [listQueuedMatches, setListQueuedMatches] = useState([]);
   const [loadingDivisions, setLoadingDivisions] = useState(false);
   const [loadingTeams, setLoadingTeams] = useState(false);
@@ -115,11 +173,19 @@ function DivisionMatchesTab() {
   const userId = getStoredUserId();
   const dateQuery = toDateQueryValue(matchDateTime);
 
+  const independentTeamIds = useMemo(
+    () => (isOther ? new Set(teams.map((team) => team.id)) : null),
+    [isOther, teams]
+  );
+
   const teamBookings = useMemo(() => {
+    if (!matchDateTime) return {};
     const bookings = {};
     for (const match of dayMatches) {
-      const homeId = match.homeTeam?.teamId;
-      const awayId = match.awayTeam?.teamId;
+      if (!hasMatchTimeConflict(matchDateTime, match.dateTime)) continue;
+
+      const homeId = getTeamIdFromRef(match.homeTeam);
+      const awayId = getTeamIdFromRef(match.awayTeam);
       if (!homeId || !awayId) continue;
 
       bookings[homeId] = {
@@ -127,6 +193,7 @@ function DivisionMatchesTab() {
         opponentName: match.awayTeamName,
         opponentCode: match.awayTeam?.shortCode,
         matchId: match.matchId,
+        dateTime: match.dateTime,
         dateStatus: match.dateStatus || match.status,
         venueName: match.venueName,
       };
@@ -135,15 +202,16 @@ function DivisionMatchesTab() {
         opponentName: match.homeTeamName,
         opponentCode: match.homeTeam?.shortCode,
         matchId: match.matchId,
+        dateTime: match.dateTime,
         dateStatus: match.dateStatus || match.status,
         venueName: match.venueName,
       };
     }
     return bookings;
-  }, [dayMatches]);
+  }, [dayMatches, matchDateTime]);
 
   const bookedTeamIds = useMemo(
-    () => new Set(Object.keys(teamBookings)),
+    () => new Set(Object.keys(teamBookings).map(normalizeTeamId)),
     [teamBookings]
   );
 
@@ -189,41 +257,109 @@ function DivisionMatchesTab() {
   }, [userId]);
 
   const loadTeams = useCallback(async () => {
-    if (!userId || !selectedDivisionId) {
+    if (!userId) {
       setTeams([]);
       return;
     }
+    if (isDivision && !selectedDivisionId) {
+      setTeams([]);
+      return;
+    }
+    if (isInterDivision && divisions.length === 0) {
+      setTeams([]);
+      return;
+    }
+
     setLoadingTeams(true);
     try {
-      const res = await teamAPI.getByUserIdAndTournament(
-        userId,
-        selectedDivisionId,
-        { filter: "" }
-      );
-      const list = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
-      setTeams(list.map(mapTeam).filter((t) => t.id));
+      if (isOther) {
+        const res = await teamAPI.getByUserIdAndTournament(userId, "", {
+          filter: "not_in_division",
+        });
+        const list = Array.isArray(res.data)
+          ? res.data
+          : res.data
+            ? [res.data]
+            : [];
+        const mapped = list.map((team) => mapTeam(team)).filter((team) => team.id);
+        mapped.sort((a, b) => a.name.localeCompare(b.name));
+        setTeams(mapped);
+      } else if (isInterDivision) {
+        const merged = [];
+        const seen = new Set();
+        for (const division of divisions) {
+          const res = await teamAPI.getByUserIdAndTournament(
+            userId,
+            division.id,
+            { filter: "" }
+          );
+          const list = Array.isArray(res.data)
+            ? res.data
+            : res.data
+              ? [res.data]
+              : [];
+          for (const team of list) {
+            const mapped = mapTeam(team, division);
+            if (!mapped.id || seen.has(mapped.id)) continue;
+            seen.add(mapped.id);
+            merged.push(mapped);
+          }
+        }
+        merged.sort((a, b) => a.name.localeCompare(b.name));
+        setTeams(merged);
+      } else {
+        const res = await teamAPI.getByUserIdAndTournament(
+          userId,
+          selectedDivisionId,
+          { filter: "" }
+        );
+        const list = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
+        setTeams(
+          list
+            .map((team) => mapTeam(team, divisions.find((d) => d.id === selectedDivisionId)))
+            .filter((t) => t.id)
+        );
+      }
     } catch {
       setTeams([]);
     } finally {
       setLoadingTeams(false);
     }
-  }, [userId, selectedDivisionId]);
+  }, [userId, selectedDivisionId, divisions, isDivision, isInterDivision, isOther]);
 
   const loadDayMatches = useCallback(async () => {
-    if (!selectedDivisionId || !dateQuery) {
+    if (!dateQuery) {
+      setDayMatches([]);
+      return;
+    }
+    if (isDivision && !selectedDivisionId) {
+      setDayMatches([]);
+      return;
+    }
+    if (isOther && teams.length === 0) {
       setDayMatches([]);
       return;
     }
     setLoadingMatches(true);
     try {
       const res = await companyAPI.getMatches({
-        division: selectedDivisionId,
+        ...(isDivision ? { division: selectedDivisionId } : {}),
         dateFrom: dateQuery,
         dateTo: dateQuery,
       });
       if (Number(res.errorCode) === 0) {
         const raw = Array.isArray(res.data?.matches) ? res.data.matches : [];
-        setDayMatches(raw.map(mapCompanyMatch));
+        let mapped = raw.map(mapCompanyMatch);
+        if (isOther && independentTeamIds) {
+          mapped = mapped.filter((match) => {
+            const homeId = getTeamIdFromRef(match.homeTeam);
+            const awayId = getTeamIdFromRef(match.awayTeam);
+            return (
+              independentTeamIds.has(homeId) && independentTeamIds.has(awayId)
+            );
+          });
+        }
+        setDayMatches(mapped);
       } else {
         setDayMatches([]);
       }
@@ -232,46 +368,82 @@ function DivisionMatchesTab() {
     } finally {
       setLoadingMatches(false);
     }
-  }, [selectedDivisionId, dateQuery]);
+  }, [
+    selectedDivisionId,
+    dateQuery,
+    isDivision,
+    isOther,
+    teams,
+    independentTeamIds,
+  ]);
 
   useEffect(() => {
     if (isSuperAdmin && (!companiesReady || !selectedCompanyId)) return;
-    loadDivisions();
+    if (!isOther) loadDivisions();
     loadVenues();
-  }, [isSuperAdmin, selectedCompanyId, companiesReady, loadDivisions, loadVenues]);
+  }, [
+    isSuperAdmin,
+    selectedCompanyId,
+    companiesReady,
+    loadDivisions,
+    loadVenues,
+    isOther,
+  ]);
 
   useEffect(() => {
+    if (isInterDivision && divisions.length === 0) return;
     loadTeams();
     setRowSelections({});
-    setRowVenues({});
     setListHomeTeamId("");
     setListAwayTeamId("");
-    setListVenueId("");
     setListQueuedMatches([]);
-  }, [loadTeams]);
+  }, [loadTeams, isInterDivision, isOther, divisions.length]);
 
   useEffect(() => {
     loadDayMatches();
     setRowSelections({});
-    setRowVenues({});
     setListHomeTeamId("");
     setListAwayTeamId("");
-    setListVenueId("");
     setListQueuedMatches([]);
   }, [loadDayMatches]);
 
-  const getExistingPairMatch = (homeId, awayId) =>
-    dayMatches.find(
-      (match) =>
-        (match.homeTeam?.teamId === homeId &&
-          match.awayTeam?.teamId === awayId) ||
-        (match.homeTeam?.teamId === awayId && match.awayTeam?.teamId === homeId)
-    );
+  const getExistingPairMatch = useCallback(
+    (homeId, awayId) => {
+      const normalizedHomeId = normalizeTeamId(homeId);
+      const normalizedAwayId = normalizeTeamId(awayId);
+      return dayMatches.find((match) => {
+        const matchHomeId = getTeamIdFromRef(match.homeTeam);
+        const matchAwayId = getTeamIdFromRef(match.awayTeam);
+        const isPair =
+          (matchHomeId === normalizedHomeId &&
+            matchAwayId === normalizedAwayId) ||
+          (matchHomeId === normalizedAwayId &&
+            matchAwayId === normalizedHomeId);
+        if (!isPair) return false;
+        if (!matchDateTime) return true;
+        return hasMatchTimeConflict(matchDateTime, match.dateTime);
+      });
+    },
+    [dayMatches, matchDateTime]
+  );
+
+  const isTeamBookedAtSelectedTime = useCallback(
+    (teamId) => bookedTeamIds.has(normalizeTeamId(teamId)),
+    [bookedTeamIds]
+  );
 
   const canSelectGridCell = (homeId, awayId) => {
     if (homeId === awayId) return false;
+    if (isInterDivision && !teamsInDifferentDivisions(teams, homeId, awayId)) {
+      return false;
+    }
     if (getExistingPairMatch(homeId, awayId)) return false;
-    if (bookedTeamIds.has(homeId) || bookedTeamIds.has(awayId)) return false;
+    if (
+      isTeamBookedAtSelectedTime(homeId) ||
+      isTeamBookedAtSelectedTime(awayId)
+    ) {
+      return false;
+    }
 
     const selectedAwayInRow = rowSelections[homeId];
     if (selectedAwayInRow === awayId) return true;
@@ -287,20 +459,11 @@ function DivisionMatchesTab() {
       const next = { ...prev };
       if (next[homeId] === awayId) {
         delete next[homeId];
-        setRowVenues((venues) => {
-          const updated = { ...venues };
-          delete updated[homeId];
-          return updated;
-        });
       } else {
         next[homeId] = awayId;
       }
       return next;
     });
-  };
-
-  const handleRowVenueChange = (homeId, venue) => {
-    setRowVenues((prev) => ({ ...prev, [homeId]: venue }));
   };
 
   const handleListHomeChange = (teamId) => {
@@ -312,6 +475,14 @@ function DivisionMatchesTab() {
 
   const handleListAwayChange = (teamId) => {
     if (teamId && teamId === listHomeTeamId) return;
+    if (
+      teamId &&
+      listHomeTeamId &&
+      isInterDivision &&
+      !teamsInDifferentDivisions(teams, listHomeTeamId, teamId)
+    ) {
+      return;
+    }
     setListAwayTeamId(teamId);
   };
 
@@ -330,11 +501,17 @@ function DivisionMatchesTab() {
   }, [listQueuedMatches]);
 
   const isTeamUnavailableForList = (teamId) =>
-    bookedTeamIds.has(teamId) || teamsInListQueue.has(teamId);
+    isTeamBookedAtSelectedTime(teamId) || teamsInListQueue.has(teamId);
 
   const canAddCurrentListMatch = useMemo(() => {
-    if (!listHomeTeamId || !listAwayTeamId || !listVenueId) return false;
+    if (!listHomeTeamId || !listAwayTeamId || !sharedVenueId) return false;
     if (listTeamsConflict) return false;
+    if (
+      isInterDivision &&
+      !teamsInDifferentDivisions(teams, listHomeTeamId, listAwayTeamId)
+    ) {
+      return false;
+    }
     if (getExistingPairMatch(listHomeTeamId, listAwayTeamId)) return false;
     if (isTeamUnavailableForList(listHomeTeamId)) return false;
     if (isTeamUnavailableForList(listAwayTeamId)) return false;
@@ -345,12 +522,15 @@ function DivisionMatchesTab() {
   }, [
     listHomeTeamId,
     listAwayTeamId,
-    listVenueId,
+    sharedVenueId,
     listTeamsConflict,
     listQueuedMatches,
     bookedTeamIds,
     teamsInListQueue,
     dayMatches,
+    matchDateTime,
+    isInterDivision,
+    teams,
   ]);
 
   const handleAddListMatch = () => {
@@ -358,7 +538,7 @@ function DivisionMatchesTab() {
       Swal.fire({
         icon: "warning",
         title: "Cannot add match",
-        text: "Select home, away, and venue. Teams must be available and different.",
+        text: "Select home, away teams and a venue from the filters above.",
       });
       return;
     }
@@ -370,12 +550,10 @@ function DivisionMatchesTab() {
         id,
         homeId: listHomeTeamId,
         awayId: listAwayTeamId,
-        venueId: listVenueId,
       },
     ]);
     setListHomeTeamId("");
     setListAwayTeamId("");
-    setListVenueId("");
   };
 
   const handleRemoveListMatch = (matchId) => {
@@ -383,39 +561,55 @@ function DivisionMatchesTab() {
   };
 
   const pairsToCreate = useMemo(() => {
-    if (viewMode === "grid") {
-      return Object.entries(rowSelections).map(([homeId, awayId]) => ({
-        homeId,
-        awayId,
-        venueId: rowVenues[homeId] || "",
-      }));
-    }
-    return listQueuedMatches.map((match) => ({
-      homeId: match.homeId,
-      awayId: match.awayId,
-      venueId: match.venueId,
-    }));
-  }, [viewMode, rowSelections, rowVenues, listQueuedMatches]);
+    const base =
+      viewMode === "grid"
+        ? Object.entries(rowSelections).map(([homeId, awayId]) => ({
+            homeId,
+            awayId,
+          }))
+        : listQueuedMatches.map((match) => ({
+            homeId: match.homeId,
+            awayId: match.awayId,
+          }));
 
-  const allPairsHaveVenue = pairsToCreate.every((pair) => Boolean(pair.venueId));
+    return base.map((pair) => ({ ...pair, venueId: sharedVenueId }));
+  }, [viewMode, rowSelections, listQueuedMatches, sharedVenueId]);
+
+  const hasPairTimeConflict = useCallback(
+    (homeId, awayId) =>
+      Boolean(getExistingPairMatch(homeId, awayId)) ||
+      isTeamBookedAtSelectedTime(homeId) ||
+      isTeamBookedAtSelectedTime(awayId),
+    [getExistingPairMatch, isTeamBookedAtSelectedTime]
+  );
+
+  const canCreateMatches =
+    pairsToCreate.length > 0 &&
+    Boolean(sharedVenueId) &&
+    pairsToCreate.every(
+      ({ homeId, awayId }) => !hasPairTimeConflict(homeId, awayId)
+    );
 
   const teamNameById = useMemo(
     () => Object.fromEntries(teams.map((t) => [t.id, t.name])),
     [teams]
   );
 
-  const venueNameById = useMemo(
-    () => Object.fromEntries(venues.map((v) => [v.id, v.name])),
-    [venues]
-  );
-
   const handleCreate = async () => {
-    if (!selectedDivisionId) {
+    if (isDivision && !selectedDivisionId) {
       Swal.fire({ icon: "warning", title: "Select a division" });
       return;
     }
     if (!matchDateTime) {
       Swal.fire({ icon: "warning", title: "Select date and time" });
+      return;
+    }
+    if (isPastMatchDateTime(matchDateTime)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid date & time",
+        text: "Cannot schedule a match in the past.",
+      });
       return;
     }
     if (pairsToCreate.length === 0) {
@@ -426,11 +620,23 @@ function DivisionMatchesTab() {
       });
       return;
     }
-    if (!allPairsHaveVenue) {
+    if (!sharedVenueId) {
       Swal.fire({
         icon: "warning",
         title: "Venue required",
-        text: "Each match needs its own venue before creating.",
+        text: "Select a venue from the filters above.",
+      });
+      return;
+    }
+
+    const conflictingPair = pairsToCreate.find(({ homeId, awayId }) =>
+      hasPairTimeConflict(homeId, awayId)
+    );
+    if (conflictingPair) {
+      Swal.fire({
+        icon: "warning",
+        title: "Time conflict",
+        text: `A team already has a match within ${MATCH_TIME_BUFFER_MINUTES} minutes of the selected time, or this pairing already exists on this date.`,
       });
       return;
     }
@@ -467,10 +673,8 @@ function DivisionMatchesTab() {
           showConfirmButton: false,
         });
         setRowSelections({});
-        setRowVenues({});
         setListHomeTeamId("");
         setListAwayTeamId("");
-        setListVenueId("");
         setListQueuedMatches([]);
         await loadDayMatches();
       }
@@ -497,31 +701,38 @@ function DivisionMatchesTab() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div className="relative">
-          <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-600">
-            <Layers className="h-3.5 w-3.5 text-[#00ADE5]" />
-            Division
-          </label>
+      <div
+        className={clsx(
+          "grid grid-cols-1 gap-4",
+          hideDivisionPicker ? "md:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-4"
+        )}
+      >
+        {isDivision && (
           <div className="relative">
-            <select
-              value={selectedDivisionId}
-              onChange={(e) => setSelectedDivisionId(e.target.value)}
-              disabled={loadingDivisions}
-              className={selectClass}
-            >
-              <option value="">
-                {loadingDivisions ? "Loading…" : "Select division"}
-              </option>
-              {divisions.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
+            <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-600">
+              <Layers className="h-3.5 w-3.5 text-[#00ADE5]" />
+              Division
+            </label>
+            <div className="relative">
+              <select
+                value={selectedDivisionId}
+                onChange={(e) => setSelectedDivisionId(e.target.value)}
+                disabled={loadingDivisions}
+                className={selectClass}
+              >
+                <option value="">
+                  {loadingDivisions ? "Loading…" : "Select division"}
                 </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                {divisions.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            </div>
           </div>
-        </div>
+        )}
 
         <div>
           <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-600">
@@ -537,6 +748,9 @@ function DivisionMatchesTab() {
             dateFormat="MMMM d, yyyy h:mm aa"
             className={datePickerClass}
             placeholderText="Select date and time"
+            minDate={getMinDateForMatchCreate()}
+            minTime={getDatePickerMinTime(matchDateTime)}
+            maxTime={getDatePickerMaxTime(matchDateTime)}
           />
         </div>
 
@@ -560,15 +774,43 @@ function DivisionMatchesTab() {
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           </div>
         </div>
+
+        <div className="relative">
+          <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-600">
+            <MapPin className="h-3.5 w-3.5 text-[#00ADE5]" />
+            Venue
+          </label>
+          <div className="relative">
+            <select
+              value={sharedVenueId}
+              onChange={(e) => setSharedVenueId(e.target.value)}
+              disabled={loadingVenues}
+              className={selectClass}
+            >
+              <option value="">
+                {loadingVenues ? "Loading…" : "Select venue"}
+              </option>
+              {venues.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-start gap-3 rounded-2xl border border-[#00ADE5]/20 bg-[#00ADE5]/5 px-4 py-3.5">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#00ADE5]" />
           <p className="text-sm leading-relaxed text-gray-600">
-            Teams with a match on the selected date are shown as booked and
-            cannot be paired again. Select pairings and a venue for each match,
-            then press{" "}
+            {isInterDivision
+              ? `Pair teams from different divisions only. Existing matches from any division within ${MATCH_TIME_BUFFER_MINUTES} minutes of the selected time block those teams.`
+              : isOther
+                ? `Independent teams only — not assigned to any division. Teams with a match within ${MATCH_TIME_BUFFER_MINUTES} minutes of the selected time cannot be paired again.`
+                : `Teams with a match within ${MATCH_TIME_BUFFER_MINUTES} minutes of the selected time cannot be paired again.`}{" "}
+            Select pairings, choose a venue above, then press{" "}
             <span className="font-semibold text-[#003366]">Create</span>.
           </p>
         </div>
@@ -606,9 +848,7 @@ function DivisionMatchesTab() {
           <button
             type="button"
             onClick={handleCreate}
-            disabled={
-              creating || pairsToCreate.length === 0 || !allPairsHaveVenue
-            }
+            disabled={creating || !canCreateMatches}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:opacity-60"
           >
             {creating ? (
@@ -621,9 +861,19 @@ function DivisionMatchesTab() {
         </div>
       </div>
 
-      {!selectedDivisionId ? (
+      {isDivision && !selectedDivisionId ? (
         <div className="rounded-2xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-500">
           Select a division to load teams.
+        </div>
+      ) : isInterDivision && loadingDivisions ? (
+        <div className="rounded-2xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-500">
+          <Loader2 className="mx-auto mb-2 h-7 w-7 animate-spin text-[#00ADE5]" />
+          Loading divisions and teams…
+        </div>
+      ) : isOther && loadingTeams && teams.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-500">
+          <Loader2 className="mx-auto mb-2 h-7 w-7 animate-spin text-[#00ADE5]" />
+          Loading independent teams…
         </div>
       ) : !matchDateTime ? (
         <div className="rounded-2xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-500">
@@ -631,7 +881,11 @@ function DivisionMatchesTab() {
         </div>
       ) : teams.length === 0 && !tableLoading ? (
         <div className="rounded-2xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-500">
-          No teams found in this division.
+          {isInterDivision
+            ? "No teams found across divisions."
+            : isOther
+              ? "No independent teams found. Create teams under Setup that are not assigned to a division."
+              : "No teams found in this division."}
         </div>
       ) : viewMode === "grid" ? (
         <div className="relative overflow-hidden rounded-2xl border border-gray-200/90">
@@ -651,17 +905,25 @@ function DivisionMatchesTab() {
                     <th
                       key={team.id}
                       className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider"
-                      title={team.name}
+                      title={
+                        isInterDivision
+                          ? `${team.name} (${team.divisionName})`
+                          : team.name
+                      }
                     >
                       {team.code}
+                      {isInterDivision && team.divisionName && (
+                        <span className="mx-auto mt-1 block max-w-[5.5rem] text-[10px] font-normal normal-case leading-tight opacity-90 whitespace-normal">
+                          {team.divisionName}
+                        </span>
+                      )}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {teams.map((homeTeam) => {
-                  const homeBooking = teamBookings[homeTeam.id];
-                  const selectedAwayId = rowSelections[homeTeam.id];
+                  const homeBooking = teamBookings[normalizeTeamId(homeTeam.id)];
                   return (
                     <tr
                       key={homeTeam.id}
@@ -674,41 +936,19 @@ function DivisionMatchesTab() {
                         <div className="text-sm font-semibold text-[#003366]">
                           {homeTeam.name}
                         </div>
+                        {isInterDivision && homeTeam.divisionName && (
+                          <div className="mt-0.5 text-xs text-gray-500">
+                            {homeTeam.divisionName}
+                          </div>
+                        )}
                         {homeBooking && (
                           <div className="mt-0.5 text-xs text-amber-700">
                             vs {homeBooking.opponentName} ·{" "}
-                            {formatMatchDateStatusLabel(homeBooking.dateStatus)}
+                            {formatMatchTimeLabel(homeBooking.dateTime)}
                             {homeBooking.venueName
                               ? ` · ${homeBooking.venueName}`
                               : ""}
                           </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {selectedAwayId ? (
-                          <div className="relative min-w-[9rem]">
-                            <select
-                              value={rowVenues[homeTeam.id] || ""}
-                              onChange={(e) =>
-                                handleRowVenueChange(
-                                  homeTeam.id,
-                                  e.target.value
-                                )
-                              }
-                              disabled={loadingVenues}
-                              className={compactSelectClass}
-                            >
-                              <option value="">Select venue</option>
-                              {venues.map((v) => (
-                                <option key={v.id} value={v.id}>
-                                  {v.name}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-300">—</span>
                         )}
                       </td>
                       {teams.map((awayTeam) => {
@@ -724,6 +964,20 @@ function DivisionMatchesTab() {
                         );
 
                         if (homeTeam.id === awayTeam.id) {
+                          return (
+                            <td
+                              key={awayTeam.id}
+                              className="px-3 py-3 text-center text-xs text-gray-300"
+                            >
+                              —
+                            </td>
+                          );
+                        }
+
+                        if (
+                          isInterDivision &&
+                          homeTeam.divisionId === awayTeam.divisionId
+                        ) {
                           return (
                             <td
                               key={awayTeam.id}
@@ -775,11 +1029,15 @@ function DivisionMatchesTab() {
           <div className="border-b border-gray-100 bg-gradient-to-r from-[#003366]/[0.03] to-[#00ADE5]/[0.05] px-5 py-4">
             <h3 className="text-sm font-bold text-[#003366]">Select matchup</h3>
             <p className="mt-0.5 text-xs text-gray-500">
-              Add multiple matches, then create them all at once
+              {isInterDivision
+                ? "Home and away must be from different divisions"
+                : isOther
+                  ? "Pair independent teams, then create them all at once"
+                  : "Add multiple matches, then create them all at once"}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
             <div className="relative">
               <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-600">
                 <Home className="h-3.5 w-3.5 text-[#00ADE5]" />
@@ -793,7 +1051,10 @@ function DivisionMatchesTab() {
                 >
                   <option value="">Select home team</option>
                   {teams.map((team) => {
-                    const booking = teamBookings[team.id];
+                    const booking = teamBookings[normalizeTeamId(team.id)];
+                    const divisionLabel = isInterDivision && team.divisionName
+                      ? ` · ${team.divisionName}`
+                      : "";
                     return (
                       <option
                         key={team.id}
@@ -801,8 +1062,9 @@ function DivisionMatchesTab() {
                         disabled={isTeamUnavailableForList(team.id)}
                       >
                         {team.name}
+                        {divisionLabel}
                         {booking
-                          ? ` (vs ${booking.opponentName})`
+                          ? ` (vs ${booking.opponentName} · ${formatMatchTimeLabel(booking.dateTime)})`
                           : teamsInListQueue.has(team.id)
                             ? " (queued)"
                             : ""}
@@ -827,51 +1089,36 @@ function DivisionMatchesTab() {
                 >
                   <option value="">Select away team</option>
                   {teams.map((team) => {
-                    const booking = teamBookings[team.id];
+                    const booking = teamBookings[normalizeTeamId(team.id)];
                     const isHomeTeam = team.id === listHomeTeamId;
                     const unavailable = isTeamUnavailableForList(team.id);
+                    const sameDivision =
+                      isInterDivision &&
+                      listHomeTeamId &&
+                      !teamsInDifferentDivisions(teams, listHomeTeamId, team.id);
+                    const divisionLabel = isInterDivision && team.divisionName
+                      ? ` · ${team.divisionName}`
+                      : "";
                     return (
                       <option
                         key={team.id}
                         value={team.id}
-                        disabled={isHomeTeam || unavailable}
+                        disabled={isHomeTeam || unavailable || sameDivision}
                       >
                         {team.name}
+                        {divisionLabel}
                         {isHomeTeam
                           ? " (same as home)"
-                          : booking
-                            ? ` (vs ${booking.opponentName})`
-                            : teamsInListQueue.has(team.id)
-                              ? " (queued)"
-                              : ""}
+                          : sameDivision
+                            ? " (same division)"
+                            : booking
+                              ? ` (vs ${booking.opponentName} · ${formatMatchTimeLabel(booking.dateTime)})`
+                              : teamsInListQueue.has(team.id)
+                                ? " (queued)"
+                                : ""}
                       </option>
                     );
                   })}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              </div>
-            </div>
-
-            <div className="relative sm:col-span-2 lg:col-span-1">
-              <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-600">
-                <MapPin className="h-3.5 w-3.5 text-[#00ADE5]" />
-                Venue
-              </label>
-              <div className="relative">
-                <select
-                  value={listVenueId}
-                  onChange={(e) => setListVenueId(e.target.value)}
-                  disabled={loadingVenues || !listHomeTeamId || !listAwayTeamId}
-                  className={selectClass}
-                >
-                  <option value="">
-                    {loadingVenues ? "Loading…" : "Select venue"}
-                  </option>
-                  {venues.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name}
-                    </option>
-                  ))}
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               </div>
@@ -882,6 +1129,13 @@ function DivisionMatchesTab() {
             {listTeamsConflict ? (
               <p className="text-sm text-red-600">
                 Home and away team cannot be the same.
+              </p>
+            ) : isInterDivision &&
+              listHomeTeamId &&
+              listAwayTeamId &&
+              !teamsInDifferentDivisions(teams, listHomeTeamId, listAwayTeamId) ? (
+              <p className="text-sm text-red-600">
+                Home and away must be from different divisions.
               </p>
             ) : (
               <p className="text-sm text-gray-500">
@@ -908,7 +1162,6 @@ function DivisionMatchesTab() {
                     <tr className="bg-slate-50/80 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                       <th className="px-5 py-3">Home</th>
                       <th className="px-5 py-3">Away</th>
-                      <th className="px-5 py-3">Venue</th>
                       <th className="px-5 py-3 text-right">Remove</th>
                     </tr>
                   </thead>
@@ -921,7 +1174,6 @@ function DivisionMatchesTab() {
                         <td className="px-5 py-3 font-semibold text-[#003366]">
                           {teamNameById[match.awayId]}
                         </td>
-                        <td className="px-5 py-3">{venueNameById[match.venueId]}</td>
                         <td className="px-5 py-3 text-right">
                           <button
                             type="button"
@@ -985,11 +1237,11 @@ export default function ManuallyCreate() {
         </nav>
 
         <div className="p-5 sm:p-6">
-          {activeTab === "division" && <DivisionMatchesTab />}
+          {activeTab === "division" && <ManualMatchesPanel mode="division" />}
           {activeTab === "inter-division" && (
-            <PlaceholderTab label="Inter-Division Matches" />
+            <ManualMatchesPanel mode="inter-division" />
           )}
-          {activeTab === "other" && <PlaceholderTab label="Other Matches" />}
+          {activeTab === "other" && <ManualMatchesPanel mode="other" />}
           {activeTab === "spreadsheet" && (
             <PlaceholderTab label="Spreadsheet Upload" />
           )}

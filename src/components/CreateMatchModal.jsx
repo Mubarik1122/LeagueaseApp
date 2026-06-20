@@ -8,6 +8,12 @@ import {
   MATCH_DATE_STATUS_OPTIONS,
 } from "../services/api";
 import Modal from "./Modal";
+import {
+  isPastDateAndTime,
+  minTimeInputForDate,
+  todayDateInputValue,
+  toDateInputValue,
+} from "../utils/matchScheduleDateTime";
 
 const inputClass =
   "w-full min-w-0 rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 transition-all duration-100 hover:bg-white focus:border-[#00ADE5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00ADE5]/20 sm:px-4 sm:py-3";
@@ -32,16 +38,6 @@ function venueOptionId(venue) {
 
 function venueOptionLabel(venue) {
   return venue?.venueName ?? venue?.name ?? venue?.title ?? "Venue";
-}
-
-function toDateInputValue(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
 }
 
 function toTimeInputValue(value) {
@@ -210,6 +206,13 @@ export default function CreateMatchModal({
       if (name === "awayTeamId" && value && value === prev.homeTeamId) {
         next.homeTeamId = "";
       }
+      if (!isEditMode && (name === "date" || name === "time")) {
+        const dateVal = name === "date" ? value : next.date;
+        const timeVal = name === "time" ? value : next.time;
+        if (dateVal && timeVal && isPastDateAndTime(dateVal, timeVal)) {
+          next.time = "";
+        }
+      }
       return next;
     });
   };
@@ -264,6 +267,19 @@ export default function CreateMatchModal({
         title: "Date & time required",
         text: "Please set when the match will take place.",
         timer: 2000,
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+    if (!isEditMode && isPastDateAndTime(form.date, form.time)) {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "warning",
+        title: "Invalid date & time",
+        text: "Cannot schedule a match in the past.",
+        timer: 2500,
         showConfirmButton: false,
       });
       return;
@@ -434,6 +450,7 @@ export default function CreateMatchModal({
                     value={form.date}
                     onChange={handleChange}
                     className={inputClass}
+                    min={!isEditMode ? todayDateInputValue() : undefined}
                     required
                   />
                 </div>
@@ -448,6 +465,11 @@ export default function CreateMatchModal({
                     value={form.time}
                     onChange={handleChange}
                     className={inputClass}
+                    min={
+                      !isEditMode
+                        ? minTimeInputForDate(form.date)
+                        : undefined
+                    }
                     required
                   />
                 </div>

@@ -770,6 +770,78 @@ export const matchAPI = {
     );
     return handleResponse(response);
   },
+
+  /** GET /match/get-point-type-all?userId=&companyId= (companyId for Super Admin) */
+  getAllPointTypes: async (userId) => {
+    const response = await fetch(
+      buildApiUrl("/match/get-point-type-all", { userId }),
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
+    return handleResponse(response);
+  },
+
+  /** POST /match/point-type-create — single create/update (pointId) */
+  createPointType: async (pointTypeData) => {
+    const response = await fetch(`${API_BASE_URL}/match/point-type-create`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(withCompanyId(pointTypeData)),
+    });
+    return handleResponse(response);
+  },
+
+  /**
+   * POST /match/point-type-create — bulk create
+   * Body: { userId, pointTypes: [...], usePredefined?: boolean } (+ companyId for Super Admin)
+   */
+  createPointTypesBulk: async ({ userId, pointTypes, usePredefined = false }) => {
+    const response = await fetch(`${API_BASE_URL}/match/point-type-create`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(
+        withCompanyId({
+          userId,
+          pointTypes,
+          ...(usePredefined ? { usePredefined: true } : {}),
+        })
+      ),
+    });
+    return handleResponse(response);
+  },
+
+  /**
+   * DELETE /match/point-type-delete
+   * Body: { userId, pointId? | pointIds[], companyId? }
+   */
+  deletePointTypes: async ({ userId, pointId, pointIds }) => {
+    const response = await fetch(`${API_BASE_URL}/match/point-type-delete`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(
+        withCompanyId({
+          userId,
+          ...(pointId ? { pointId } : {}),
+          ...(Array.isArray(pointIds) && pointIds.length ? { pointIds } : {}),
+        })
+      ),
+    });
+    return handleResponse(response);
+  },
+
+  /** GET /match/get-predefined-point-types */
+  getPredefinedPointTypes: async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/match/get-predefined-point-types`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
+    return handleResponse(response);
+  },
 };
 
 let venueDetailsInflight = null;
