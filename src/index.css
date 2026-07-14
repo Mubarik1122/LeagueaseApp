@@ -133,6 +133,15 @@ body {
   animation: modal-content-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-modal-backdrop,
   .animate-modal-content {

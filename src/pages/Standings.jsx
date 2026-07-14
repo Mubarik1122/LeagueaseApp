@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trophy, Settings, Save, BarChart3 } from "lucide-react";
 import Swal from "sweetalert2";
 import { tournamentAPI } from "../services/api";
+import { usePagePermission } from "../hooks/usePagePermission";
 
 export default function Standings() {
   const navigate = useNavigate();
+  const { canEdit } = usePagePermission("standings");
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState("");
   const [loading, setLoading] = useState(false);
@@ -87,6 +89,7 @@ export default function Standings() {
   };
 
   const handleSaveConfig = async () => {
+    if (!canEdit) return;
     if (!selectedTournament) {
       Swal.fire({
         icon: "warning",
@@ -356,22 +359,24 @@ export default function Standings() {
           </div>
 
           {/* Save Button */}
-          <div className="border-t pt-6 flex justify-end">
-            <button
-              onClick={handleSaveConfig}
-              disabled={loading || !selectedTournament}
-              className="px-6 py-2 bg-[#00ADE5] text-white rounded-md hover:bg-[#008FC5] disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
-            >
-              {loading ? (
-                "Saving..."
-              ) : (
-                <>
-                  <Save size={18} className="mr-1" />
-                  Save Configuration
-                </>
-              )}
-            </button>
-          </div>
+          {canEdit && (
+            <div className="border-t pt-6 flex justify-end">
+              <button
+                onClick={handleSaveConfig}
+                disabled={loading || !selectedTournament}
+                className="px-6 py-2 bg-[#00ADE5] text-white rounded-md hover:bg-[#008FC5] disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
+              >
+                {loading ? (
+                  "Saving..."
+                ) : (
+                  <>
+                    <Save size={18} className="mr-1" />
+                    Save Configuration
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

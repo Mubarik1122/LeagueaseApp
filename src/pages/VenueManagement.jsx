@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Search, MapPin, ArrowLeft, Trash2, Edit, Save } from "lucide-react";
 import Swal from "sweetalert2";
 import { venueAPI } from "../services/api";
+import { usePagePermission } from "../hooks/usePagePermission";
 
 export default function VenueManagement() {
   const navigate = useNavigate();
+  const { canAdd, canEdit, canDelete } = usePagePermission("venues");
   const [activeTab, setActiveTab] = useState("list");
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -62,6 +64,7 @@ export default function VenueManagement() {
 
   const handleCreateVenue = async (e) => {
     e.preventDefault();
+    if (editingVenue ? !canEdit : !canAdd) return;
     setLoading(true);
 
     try {
@@ -107,6 +110,7 @@ export default function VenueManagement() {
   };
 
   const handleEditVenue = (venue) => {
+    if (!canEdit) return;
     setVenueForm({
       venueId: venue._id || venue.id,
       venueName: venue.venueName || "",
@@ -128,6 +132,7 @@ export default function VenueManagement() {
   };
 
   const handleDeleteVenue = async (venueId) => {
+    if (!canDelete) return;
     const confirm = await Swal.fire({
       title: "Delete Venue?",
       text: "Are you sure you want to delete this venue? Teams using this venue may be affected.",
@@ -194,7 +199,7 @@ export default function VenueManagement() {
             </p>
           </div>
         </div>
-        {activeTab === "list" && (
+        {activeTab === "list" && canAdd && (
           <button
             onClick={() => {
               resetForm();
@@ -222,19 +227,26 @@ export default function VenueManagement() {
             >
               All Venues ({filteredVenues.length})
             </button>
-            <button
-              onClick={() => {
-                resetForm();
-                setActiveTab("form");
-              }}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "form"
-                  ? "border-[#009ACB] text-[#009ACB]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {editingVenue ? "Edit Venue" : "Add New Venue"}
-            </button>
+            {(canAdd || (canEdit && editingVenue)) && (
+              <button
+                onClick={() => {
+                  if (editingVenue) {
+                    setActiveTab("form");
+                    return;
+                  }
+                  if (!canAdd) return;
+                  resetForm();
+                  setActiveTab("form");
+                }}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "form"
+                    ? "border-[#009ACB] text-[#009ACB]"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {editingVenue ? "Edit Venue" : "Add New Venue"}
+              </button>
+            )}
           </nav>
         </div>
       </div>
@@ -269,13 +281,15 @@ export default function VenueManagement() {
                 <p className="text-gray-500">
                   {searchTerm ? "No venues found matching your search" : "No venues created yet"}
                 </p>
-                <button
-                  onClick={() => setActiveTab("form")}
-                  className="mt-4 px-4 py-2 bg-[#00ADE5] text-white rounded-md hover:bg-[#008FC5]"
-                >
-                  <Plus size={16} className="inline mr-1" />
-                  Create First Venue
-                </button>
+                {canAdd && (
+                  <button
+                    onClick={() => setActiveTab("form")}
+                    className="mt-4 px-4 py-2 bg-[#00ADE5] text-white rounded-md hover:bg-[#008FC5]"
+                  >
+                    <Plus size={16} className="inline mr-1" />
+                    Create First Venue
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -290,18 +304,22 @@ export default function VenueManagement() {
                         <h3 className="font-semibold text-gray-900">{venue.venueName}</h3>
                       </div>
                       <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEditVenue(venue)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteVenue(venue._id || venue.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleEditVenue(venue)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDeleteVenue(venue._id || venue.id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -330,7 +348,7 @@ export default function VenueManagement() {
       )}
 
       {/* Add/Edit Venue Form Tab */}
-      {activeTab === "form" && (
+      {activeTab === "form" && (canAdd || (canEdit && editingVenue)) && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-6">
             {editingVenue ? "Edit Venue" : "Create New Venue"}

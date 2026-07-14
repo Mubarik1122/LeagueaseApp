@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 
-export default function FacebookSettings() {
+export default function FacebookSettings({ canEdit = true }) {
   const [formData, setFormData] = useState({
     facebookAppId: "",
     facebookAppSecret: "",
@@ -53,6 +53,7 @@ export default function FacebookSettings() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!canEdit) return;
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
     const userId = user?.userId;
@@ -219,6 +220,7 @@ export default function FacebookSettings() {
           </div>
 
           {/* Buttons */}
+          {canEdit && (
           <div className="flex gap-4">
             <button
               type="submit"
@@ -243,6 +245,7 @@ export default function FacebookSettings() {
               Cancel
             </button>
           </div>
+          )}
         </form>
       </div>
     </div>

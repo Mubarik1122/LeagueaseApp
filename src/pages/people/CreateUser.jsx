@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
+  Check,
   ChevronDown,
   KeyRound,
   Loader2,
@@ -11,6 +12,7 @@ import {
   Save,
   Shield,
   User,
+  UserCog,
   UserPlus,
 } from "lucide-react";
 import Swal from "sweetalert2";
@@ -495,7 +497,27 @@ export default function CreateUser({ onBack, onSuccess, editUser = null }) {
             title="Roles within the league"
             description="Select one or more roles for this user"
           >
-            <div className="flex flex-wrap gap-2">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-gray-500">
+                {form.selectedRoles.length > 0
+                  ? `${form.selectedRoles.length} role${form.selectedRoles.length === 1 ? "" : "s"} selected`
+                  : "No role selected yet"}
+              </p>
+              {form.selectedRoles.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {form.selectedRoles.map((role) => (
+                    <span
+                      key={role}
+                      className="inline-flex items-center rounded-md bg-[#00ADE5]/10 px-2 py-0.5 text-[11px] font-semibold text-[#0088cc]"
+                    >
+                      {role}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {ASSIGNABLE_ROLES.map((role) => {
                 const active = form.selectedRoles.includes(role);
                 return (
@@ -504,19 +526,47 @@ export default function CreateUser({ onBack, onSuccess, editUser = null }) {
                     type="button"
                     onClick={() => toggleRole(role)}
                     className={clsx(
-                      "rounded-xl border px-3.5 py-2 text-sm font-semibold transition",
+                      "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition",
                       active
-                        ? "border-[#003366] bg-gradient-to-r from-[#003366] to-[#004080] text-white shadow-sm"
-                        : "border-gray-200 bg-white text-gray-600 hover:border-[#00ADE5]/40 hover:bg-[#00ADE5]/5"
+                        ? "border-[#00ADE5]/40 bg-gradient-to-r from-[#00ADE5]/10 to-white shadow-sm ring-1 ring-[#00ADE5]/20"
+                        : "border-gray-200/80 bg-white hover:border-[#003366]/20 hover:bg-[#f8fafc]"
                     )}
                   >
-                    {role}
+                    <span
+                      className={clsx(
+                        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                        active
+                          ? "bg-gradient-to-br from-[#003366] to-[#004080] text-white"
+                          : "bg-[#00ADE5]/10 text-[#00ADE5]"
+                      )}
+                    >
+                      <UserCog size={16} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-gray-900">
+                        {role}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-gray-400">
+                        {active ? "Assigned to this user" : "Click to assign"}
+                      </span>
+                    </span>
+                    <span
+                      className={clsx(
+                        "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition",
+                        active
+                          ? "bg-[#00ADE5] text-white"
+                          : "border border-gray-300 bg-white text-transparent"
+                      )}
+                    >
+                      <Check size={11} strokeWidth={3} />
+                    </span>
                   </button>
                 );
               })}
             </div>
+
             {form.selectedRoles.length === 0 && (
-              <p className="text-xs text-amber-600">
+              <p className="mt-3 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 No role selected — Player will be assigned by default.
               </p>
             )}

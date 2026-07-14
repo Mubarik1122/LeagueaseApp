@@ -31,6 +31,9 @@ export function mapCompanyUser(user) {
     dateOfBirth: user?.dateOfBirth,
     roles,
     role: roles.length ? roles.join(", ") : "—",
+    isSuperAdmin:
+      user?.isSuperAdmin === true ||
+      roles.some((r) => String(r).trim().toLowerCase() === "super admin"),
     teams,
     divisions,
     teamNames,
@@ -203,6 +206,22 @@ export function userHasPlayerRole(user) {
     .split(",")
     .map((role) => role.trim())
     .includes("Player");
+}
+
+/** Target row is a Super Admin (flag or role name). */
+export function userIsSuperAdmin(user) {
+  if (!user) return false;
+  if (user.isSuperAdmin === true) return true;
+  const roles = Array.isArray(user.roles) ? user.roles : [];
+  if (
+    roles.some((role) => String(role).trim().toLowerCase() === "super admin")
+  ) {
+    return true;
+  }
+  return String(user.role || "")
+    .split(",")
+    .map((role) => role.trim().toLowerCase())
+    .includes("super admin");
 }
 
 export function useUsers() {

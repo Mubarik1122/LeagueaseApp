@@ -5,10 +5,12 @@ const initialValue = {
   user: null,
   loading: true,
   isAuthenticated: false,
+  accessRefreshing: false,
   setIsAuthenticated: () => {},
-  login: async () => {}, // placeholder async functions
+  login: async () => {},
   logout: () => {},
   signup: async () => {},
+  refreshAccess: async () => {},
 };
 
 const AuthContext = createContext(initialValue);

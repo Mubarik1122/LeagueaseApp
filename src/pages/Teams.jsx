@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Search, Users, ArrowLeft, Trash2, Edit, MapPin } from "lucide-react";
 import Swal from "sweetalert2";
 import { teamAPI, tournamentAPI, venueAPI } from "../services/api";
+import { usePagePermission } from "../hooks/usePagePermission";
 
 export default function Teams() {
   const navigate = useNavigate();
+  const { canAdd, canEdit, canDelete } = usePagePermission("teams");
   const [activeTab, setActiveTab] = useState("existing");
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState("");
@@ -94,6 +96,7 @@ export default function Teams() {
 
   const handleCreateTeam = async (e) => {
     e.preventDefault();
+    if (!canAdd) return;
 
     if (!selectedTournament) {
       Swal.fire({
@@ -168,6 +171,7 @@ export default function Teams() {
   };
 
   const handleDeleteTeam = async (teamId) => {
+    if (!canDelete) return;
     const confirm = await Swal.fire({
       title: "Delete Team?",
       text: "Are you sure you want to delete this team?",
@@ -246,16 +250,18 @@ export default function Teams() {
             >
               Existing Teams ({filteredTeams.length})
             </button>
-            <button
-              onClick={() => setActiveTab("create")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "create"
-                  ? "border-[#009ACB] text-[#009ACB]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Create New Team
-            </button>
+            {canAdd && (
+              <button
+                onClick={() => setActiveTab("create")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "create"
+                    ? "border-[#009ACB] text-[#009ACB]"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Create New Team
+              </button>
+            )}
           </nav>
         </div>
       </div>
@@ -290,13 +296,15 @@ export default function Teams() {
                 <p className="text-gray-500">
                   {searchTerm ? "No teams found matching your search" : "No teams added yet"}
                 </p>
-                <button
-                  onClick={() => setActiveTab("create")}
-                  className="mt-4 px-4 py-2 bg-[#00ADE5] text-white rounded-md hover:bg-[#008FC5]"
-                >
-                  <Plus size={16} className="inline mr-1" />
-                  Create First Team
-                </button>
+                {canAdd && (
+                  <button
+                    onClick={() => setActiveTab("create")}
+                    className="mt-4 px-4 py-2 bg-[#00ADE5] text-white rounded-md hover:bg-[#008FC5]"
+                  >
+                    <Plus size={16} className="inline mr-1" />
+                    Create First Team
+                  </button>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -341,21 +349,25 @@ export default function Teams() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex space-x-2">
-                            <button
-                              onClick={() => {
-                                // Implement edit functionality
-                                Swal.fire("Info", "Edit functionality coming soon", "info");
-                              }}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <Edit size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTeam(team._id || team.id)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            {canEdit && (
+                              <button
+                                onClick={() => {
+                                  // Implement edit functionality
+                                  Swal.fire("Info", "Edit functionality coming soon", "info");
+                                }}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <Edit size={18} />
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDeleteTeam(team._id || team.id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -369,7 +381,7 @@ export default function Teams() {
       )}
 
       {/* Create New Team Tab */}
-      {activeTab === "create" && (
+      {activeTab === "create" && canAdd && (
         <div className="bg-white rounded-lg shadow p-6">
           <form onSubmit={handleCreateTeam} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

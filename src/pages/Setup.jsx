@@ -1,7 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChevronDown, Settings2 } from "lucide-react";
 import clsx from "clsx";
+import { useAuthContext } from "../context/AuthContext";
+import {
+  getNestedTabsForCategory,
+  hasPagePermission,
+} from "../utils/userNavigation";
+import RequirePageAccess from "../components/RequirePageAccess";
+import { usePagePermission } from "../hooks/usePagePermission";
 
 // Import settings components
 import LeagueOptions from "../components/settings/LeagueOptions";
@@ -33,16 +40,22 @@ const settingsTabs = [
   { id: "terminology", label: "Terminology", component: Terminology },
 ];
 
-const mainTabs = [
-  { id: "settings", label: "Settings", hasSubTabs: true },
-  { id: "seasons", label: "Seasons", component: Seasons },
-  { id: "venues", label: "Venues", component: VenuesTab },
-  { id: "teams", label: "Teams", component: TeamsTab },
-  { id: "competitions", label: "Competitions", component: Competitions },
-  { id: "statistics", label: "Statistic Setup", component: StatisticSetup },
-  { id: "standings", label: "Standings", component: StandingsTab },
-  { id: "score-entry", label: "Score Entry Options", component: ScoreEntryOptions },
-];
+const MAIN_TAB_COMPONENTS = {
+  settings: { id: "settings", label: "Settings", hasSubTabs: true },
+  seasons: { id: "seasons", label: "Seasons", component: Seasons },
+  venues: { id: "venues", label: "Venues", component: VenuesTab },
+  teams: { id: "teams", label: "Teams", component: TeamsTab },
+  competitions: { id: "competitions", label: "Competitions", component: Competitions },
+  statistics: { id: "statistics", label: "Statistic Setup", component: StatisticSetup },
+  standings: { id: "standings", label: "Standings", component: StandingsTab },
+  "score-entry": {
+    id: "score-entry",
+    label: "Score Entry Options",
+    component: ScoreEntryOptions,
+  },
+};
+
+const FALLBACK_MAIN_TABS = Object.values(MAIN_TAB_COMPONENTS);
 
 const tabButtonClass = (isActive) =>
   clsx(
@@ -52,22 +65,51 @@ const tabButtonClass = (isActive) =>
       : "text-gray-500 hover:bg-slate-50 hover:text-[#003366]"
   );
 
-const SETUP_TAB_IDS = new Set(mainTabs.map((tab) => tab.id));
-
 export default function Setup() {
+  const { user } = useAuthContext();
+  const { canEdit: canEditSettings } = usePagePermission("settings");
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
+
+  const mainTabs = useMemo(() => {
+    const nested = getNestedTabsForCategory(user, "setup");
+    if (nested.length === 0) return FALLBACK_MAIN_TABS;
+
+    return nested
+      .filter((item) => hasPagePermission(user, item.pageKey, "view"))
+      .map((item) => {
+        const base = MAIN_TAB_COMPONENTS[item.tabId];
+        if (!base) return null;
+        return {
+          ...base,
+          label: item.label || base.label,
+        };
+      })
+      .filter(Boolean);
+  }, [user]);
+
+  const allowedTabIds = useMemo(
+    () => new Set(mainTabs.map((tab) => tab.id)),
+    [mainTabs]
+  );
+
+  const defaultTabId = mainTabs[0]?.id || "settings";
+
   const [activeMainTab, setActiveMainTab] = useState(() =>
-    tabParam && SETUP_TAB_IDS.has(tabParam) ? tabParam : "settings"
+    tabParam && MAIN_TAB_COMPONENTS[tabParam] ? tabParam : "settings"
   );
   const [activeSettingsTab, setActiveSettingsTab] = useState("league");
   const [isTabsOpen, setIsTabsOpen] = useState(false);
 
   useEffect(() => {
-    if (tabParam && SETUP_TAB_IDS.has(tabParam)) {
+    if (tabParam && allowedTabIds.has(tabParam)) {
       setActiveMainTab(tabParam);
+      return;
     }
-  }, [tabParam]);
+    if (!allowedTabIds.has(activeMainTab)) {
+      setActiveMainTab(defaultTabId);
+    }
+  }, [tabParam, allowedTabIds, activeMainTab, defaultTabId]);
 
   const handleMainTabChange = (tabId) => {
     setActiveMainTab(tabId);
@@ -83,22 +125,21 @@ export default function Setup() {
     setSearchParams(nextParams, { replace: true });
   };
 
-  // Get the active component to render
   const getActiveComponent = () => {
     if (activeMainTab === "settings") {
       const ActiveComponent =
         settingsTabs.find((tab) => tab.id === activeSettingsTab)?.component || LeagueOptions;
-      return <ActiveComponent />;
-    } else {
-      const mainTab = mainTabs.find((tab) => tab.id === activeMainTab);
-      const ActiveComponent = mainTab?.component;
-      return ActiveComponent ? <ActiveComponent /> : null;
+      return <ActiveComponent canEdit={canEditSettings} />;
     }
+    const mainTab = mainTabs.find((tab) => tab.id === activeMainTab);
+    const ActiveComponent = mainTab?.component;
+    return ActiveComponent ? <ActiveComponent /> : null;
   };
 
   const activeTabLabel = settingsTabs.find((tab) => tab.id === activeSettingsTab)?.label;
 
   return (
+    <RequirePageAccess pageKey="setup">
     <div className="space-y-5 py-4 md:py-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -195,5 +236,6 @@ export default function Setup() {
         <div>{getActiveComponent()}</div>
       )}
     </div>
+    </RequirePageAccess>
   );
 }

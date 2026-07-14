@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 
-export default function Terminology() {
+export default function Terminology({ canEdit = true }) {
   const initialFormState = {
     teamLabel: "",
     playerLabel: "",
@@ -51,6 +51,7 @@ export default function Terminology() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!canEdit) return;
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
     const userId = user?.userId;
@@ -149,6 +150,7 @@ export default function Terminology() {
           </div>
 
           {/* Buttons */}
+          {canEdit && (
           <div className="flex gap-4">
             <button
               type="submit"
@@ -164,6 +166,7 @@ export default function Terminology() {
               Reset to Defaults
             </button>
           </div>
+          )}
         </form>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { tournamentAPI, teamAPI, playerAPI, matchAPI } from '../services/api';
 
 function normalizeTournamentList(data) {
@@ -8,34 +8,39 @@ function normalizeTournamentList(data) {
   return [];
 }
 
+/** Module-level: survives React StrictMode remounts (useRef would reset). */
+const tournamentFetchGuard = {
+  inFlightUserId: null,
+  lastCallKey: null,
+  lastCallAt: 0,
+};
+
 export const useTournament = () => {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const fetchGuardRef = useRef({
-    inFlightUserId: null,
-    lastCallUserId: null,
-    lastCallAt: 0,
-  });
 
   const fetchTournaments = async (userId, options = {}) => {
     if (!userId) return;
     const force = Boolean(options.force);
+    const companyId = options.companyId ?? null;
+    const callKey = `${userId}:${companyId || ''}`;
 
-    // React 18 StrictMode (dev) can invoke effects twice.
-    // Avoid duplicate API calls for the same userId in quick succession.
+    // React 18 StrictMode (dev) remounts and re-runs effects.
+    // Skip duplicate calls for the same user/company in quick succession.
     const now = Date.now();
-    const guard = fetchGuardRef.current;
-    const isInFlightSameUser = guard.inFlightUserId === userId;
+    const isInFlightSame =
+      tournamentFetchGuard.inFlightUserId === callKey;
     const isSameUserRecent =
-      guard.lastCallUserId === userId && now - guard.lastCallAt < 1200;
+      tournamentFetchGuard.lastCallKey === callKey &&
+      now - tournamentFetchGuard.lastCallAt < 1200;
 
-    if (!force && isInFlightSameUser) return;
+    if (!force && isInFlightSame) return;
     if (!force && isSameUserRecent) return;
 
-    guard.inFlightUserId = userId;
-    guard.lastCallUserId = userId;
-    guard.lastCallAt = now;
+    tournamentFetchGuard.inFlightUserId = callKey;
+    tournamentFetchGuard.lastCallKey = callKey;
+    tournamentFetchGuard.lastCallAt = now;
 
     setLoading(true);
     setError(null);
@@ -51,7 +56,9 @@ export const useTournament = () => {
       setError(err.message);
     } finally {
       setLoading(false);
-      fetchGuardRef.current.inFlightUserId = null;
+      if (tournamentFetchGuard.inFlightUserId === callKey) {
+        tournamentFetchGuard.inFlightUserId = null;
+      }
     }
   };
 
@@ -60,7 +67,7 @@ export const useTournament = () => {
       const response = await tournamentAPI.save(tournamentData);
       if (response.errorCode === 0) {
         if (tournamentData.userId) {
-          await fetchTournaments(tournamentData.userId);
+          await fetchTournaments(tournamentData.userId, { force: true });
         }
         return { success: true, data: response.data };
       } else {

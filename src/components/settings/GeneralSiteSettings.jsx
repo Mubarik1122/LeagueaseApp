@@ -11,7 +11,7 @@ const getTimeZones = () => {
   });
 };
 
-const GeneralSiteSettings = () => {
+const GeneralSiteSettings = ({ canEdit = true }) => {
   const initialFormState = {
     siteName: "",
     siteDescription: "",
@@ -74,6 +74,7 @@ const GeneralSiteSettings = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!canEdit) return;
 
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
@@ -236,6 +237,7 @@ const GeneralSiteSettings = () => {
           </div>
 
           {/* Buttons */}
+          {canEdit && (
           <div className="flex gap-4">
             <button
               type="submit"
@@ -251,6 +253,7 @@ const GeneralSiteSettings = () => {
               Cancel
             </button>
           </div>
+          )}
         </form>
       </div>
     </div>

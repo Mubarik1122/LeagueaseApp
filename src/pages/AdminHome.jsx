@@ -13,18 +13,24 @@ import CompetitionTable from '../components/CompetitionTable';
 import CreateDivisionModal from '../components/CreateDivisionModal';
 import { useTournament } from '../hooks/useTournament';
 import { useCompanyContext } from '../context/CompanyContext';
+import { usePagePermission } from '../hooks/usePagePermission';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function AdminHome() {
   const { tournaments, loading, error, fetchTournaments } = useTournament();
   const { isSuperAdmin, selectedCompanyId, companiesReady } = useCompanyContext();
+  const { canAdd: canAddCompetition } = usePagePermission('competitions');
+  const { canAdd: canAddUsers } = usePagePermission('users');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const refreshTournaments = (force = false) => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.userId) {
-      fetchTournaments(user.userId, { force });
+      fetchTournaments(user.userId, {
+        force,
+        companyId: isSuperAdmin ? selectedCompanyId : null,
+      });
     }
   };
 
@@ -33,6 +39,8 @@ export default function AdminHome() {
     if (!user.userId) return;
     if (isSuperAdmin && (!companiesReady || !selectedCompanyId)) return;
     refreshTournaments();
+    // Intentionally only company/auth readiness — fetchTournaments identity changes every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuperAdmin, selectedCompanyId, companiesReady]);
 
   const competitions = useMemo(() => {
@@ -117,7 +125,7 @@ export default function AdminHome() {
   ];
 
   const quickActions = [
-    {
+    canAddCompetition && {
       label: 'New Tournament',
       description: 'Create a division or league',
       icon: Plus,
@@ -129,7 +137,7 @@ export default function AdminHome() {
       icon: Calendar,
       to: '/dashboard/schedule',
     },
-    {
+    canAddUsers && {
       label: 'Add Users',
       description: 'Players, officials & staff',
       icon: Users,
@@ -141,7 +149,7 @@ export default function AdminHome() {
       icon: BarChart3,
       to: '/dashboard/results',
     },
-  ];
+  ].filter(Boolean);
 
   const showEmptyHint = !loading && !error && competitions.length === 0;
   const showTeamsHint =
@@ -168,14 +176,16 @@ export default function AdminHome() {
                 professional workspace.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-[#003366] shadow-lg transition-all hover:bg-gray-50 hover:shadow-xl"
-            >
-              <Plus size={20} />
-              Create Tournament
-            </button>
+            {canAddCompetition && (
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-[#003366] shadow-lg transition-all hover:bg-gray-50 hover:shadow-xl"
+              >
+                <Plus size={20} />
+                Create Tournament
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -291,14 +301,16 @@ export default function AdminHome() {
             <p className="mt-1 text-sm text-amber-800">
               No competitions found yet. Create your first tournament to begin.
             </p>
-            <button
-              type="button"
-              onClick={() => setShowCreateModal(true)}
-              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#003366] to-[#004080] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:shadow-md"
-            >
-              <Plus size={16} />
-              Create Your First Tournament
-            </button>
+            {canAddCompetition && (
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#003366] to-[#004080] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:shadow-md"
+              >
+                <Plus size={16} />
+                Create Your First Tournament
+              </button>
+            )}
           </div>
         </div>
       )}

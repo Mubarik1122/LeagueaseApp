@@ -21,6 +21,7 @@ import {
 import SetupTabHeader, { SetupPrimaryButton } from "./SetupTabHeader";
 import { seasonAPI } from "../../services/api";
 import { useCompanyContext } from "../../context/CompanyContext";
+import { usePagePermission } from "../../hooks/usePagePermission";
 
 const EMPTY_FORM = {
   seasonId: null,
@@ -77,6 +78,7 @@ const toDateInputValue = (value) => {
 export default function Seasons() {
   const { isSuperAdmin, selectedCompanyId, companiesReady } =
     useCompanyContext();
+  const { canAdd, canEdit, canDelete } = usePagePermission("seasons");
   const [seasons, setSeasons] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showSeasonModal, setShowSeasonModal] = useState(false);
@@ -159,12 +161,14 @@ export default function Seasons() {
   };
 
   const openCreateModal = () => {
+    if (!canAdd) return;
     setModalMode("create");
     setForm(EMPTY_FORM);
     setShowSeasonModal(true);
   };
 
   const openEditModal = async (season) => {
+    if (!canEdit) return;
     setModalMode("edit");
     setShowSeasonModal(true);
     setLoading(true);
@@ -210,6 +214,7 @@ export default function Seasons() {
   };
 
   const submitSeason = async () => {
+    if (modalMode === "create" ? !canAdd : !canEdit) return;
     if (!validateForm()) return;
 
     setLoading(true);
@@ -289,6 +294,7 @@ export default function Seasons() {
   };
 
   const handleDeleteSeason = async (seasonId) => {
+    if (!canDelete) return;
     const confirmation = await Swal.fire({
       icon: "warning",
       title: "Delete Season?",
@@ -326,9 +332,11 @@ export default function Seasons() {
         title="Seasons"
         description="Define league seasons with start and end dates. Control visibility, locking, and which season is active for your competitions."
       >
-        <SetupPrimaryButton onClick={openCreateModal} icon={Plus}>
-          Create season
-        </SetupPrimaryButton>
+        {canAdd && (
+          <SetupPrimaryButton onClick={openCreateModal} icon={Plus}>
+            Create season
+          </SetupPrimaryButton>
+        )}
       </SetupTabHeader>
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -340,9 +348,11 @@ export default function Seasons() {
               <Calendar className="text-[#00ADE5]" size={28} />
             </span>
             <p className="font-medium text-gray-700">No seasons found</p>
-            <button onClick={openCreateModal} className="mt-3 text-sm font-semibold text-[#00ADE5] hover:underline">
-              Create your first season
-            </button>
+            {canAdd && (
+              <button onClick={openCreateModal} className="mt-3 text-sm font-semibold text-[#00ADE5] hover:underline">
+                Create your first season
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -414,15 +424,19 @@ export default function Seasons() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center gap-2">
-                        <button onClick={() => openEditModal(season)} className="rounded-md p-1 text-blue-600 hover:bg-blue-50">
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSeason(season._id)}
-                          className="rounded-md p-1 text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {canEdit && (
+                          <button onClick={() => openEditModal(season)} className="rounded-md p-1 text-blue-600 hover:bg-blue-50">
+                            <Edit2 size={18} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDeleteSeason(season._id)}
+                            className="rounded-md p-1 text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

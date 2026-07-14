@@ -20,10 +20,6 @@ import {
   googleOAuthErrorText,
 } from "../../utils/googleOAuthMessage";
 import { hydrateUserFromTokenIfNeeded } from "../../utils/jwtSession";
-import {
-  isPlayerOnlyWebRoles,
-  WEB_PORTAL_PLAYER_ONLY_MESSAGE,
-} from "../../utils/webPortalAccess";
 
 export default function AccountSetup() {
   const navigate = useNavigate();
@@ -55,21 +51,6 @@ export default function AccountSetup() {
         localStorage.removeItem("user");
         localStorage.setItem("token", data.token);
         hydrateUserFromTokenIfNeeded(data.token);
-        try {
-          const stored = JSON.parse(localStorage.getItem("user") || "null");
-          if (isPlayerOnlyWebRoles(stored?.roles)) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            Swal.fire({
-              icon: "warning",
-              title: "Web access not available",
-              text: WEB_PORTAL_PLAYER_ONLY_MESSAGE,
-            });
-            return;
-          }
-        } catch {
-          /* ignore */
-        }
         Swal.fire({
           icon: "success",
           title: "Signed in with Google",

@@ -32,6 +32,7 @@ import {
   MATCH_STATUS_OPTIONS,
   hasActiveMatchFilters,
 } from "../../utils/companyMatchFilters";
+import { usePagePermission } from "../../hooks/usePagePermission";
 
 const selectClass =
   "w-full appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm font-medium text-gray-800 shadow-sm transition focus:border-[#00ADE5] focus:outline-none focus:ring-2 focus:ring-[#00ADE5]/20";
@@ -109,6 +110,7 @@ export default function ManageMatches() {
     useCompanyMatches();
   const { isSuperAdmin, selectedCompanyId, companiesReady } =
     useCompanyContext();
+  const { canAdd, canEdit, canDelete } = usePagePermission("match-schedule");
   const [filters, setFilters] = useState({ ...DEFAULT_MATCH_FILTERS });
   const [divisions, setDivisions] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -227,6 +229,7 @@ export default function ManageMatches() {
   );
 
   const handleDeleteMatch = async (match) => {
+    if (!canDelete) return;
     if (!match?.matchId) return;
 
     const confirmation = await Swal.fire({
@@ -501,17 +504,19 @@ export default function ManageMatches() {
               View, add, edit, or delete matches for your league
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingMatch(null);
-              setShowCreateModal(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:shadow-md"
-          >
-            <Plus className="h-4 w-4" />
-            Add Match
-          </button>
+          {canAdd && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingMatch(null);
+                setShowCreateModal(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:shadow-md"
+            >
+              <Plus className="h-4 w-4" />
+              Add Match
+            </button>
+          )}
         </div>
 
         {loading && (
@@ -576,17 +581,19 @@ export default function ManageMatches() {
                       <p className="text-sm text-gray-500">
                         Adjust filters or add a new match.
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingMatch(null);
-                          setShowCreateModal(true);
-                        }}
-                        className="mt-1 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:shadow-md"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Match
-                      </button>
+                      {canAdd && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingMatch(null);
+                            setShowCreateModal(true);
+                          }}
+                          className="mt-1 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:shadow-md"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Match
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -622,30 +629,34 @@ export default function ManageMatches() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowCreateModal(false);
-                            setEditingMatch(match);
-                          }}
-                          title="Edit match"
-                          className="rounded-lg p-2 text-[#003366] transition hover:bg-[#003366]/10"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMatch(match)}
-                          disabled={deletingMatchId === match.matchId}
-                          title="Delete match"
-                          className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                        >
-                          {deletingMatchId === match.matchId ? (
-                            <Loader2 size={18} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={18} />
-                          )}
-                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowCreateModal(false);
+                              setEditingMatch(match);
+                            }}
+                            title="Edit match"
+                            className="rounded-lg p-2 text-[#003366] transition hover:bg-[#003366]/10"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMatch(match)}
+                            disabled={deletingMatchId === match.matchId}
+                            title="Delete match"
+                            className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                          >
+                            {deletingMatchId === match.matchId ? (
+                              <Loader2 size={18} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={18} />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

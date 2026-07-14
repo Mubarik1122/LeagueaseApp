@@ -25,6 +25,7 @@ import {
   mapCompanyUser,
   useUsers,
   userHasPlayerRole,
+  userIsSuperAdmin,
 } from "../../hooks/useUsers";
 import { companyAPI } from "../../services/api";
 import { useCompanyContext } from "../../context/CompanyContext";
@@ -41,6 +42,8 @@ import {
 } from "../../utils/companyUserFilters";
 import CreateUser from "./CreateUser";
 import AssignPlayerToTeamsModal from "./AssignPlayerToTeamsModal";
+import { usePagePermission } from "../../hooks/usePagePermission";
+import RequirePageAccess from "../../components/RequirePageAccess";
 
 const selectClass =
   "w-full appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm font-medium text-gray-800 shadow-sm transition focus:border-[#00ADE5] focus:outline-none focus:ring-2 focus:ring-[#00ADE5]/20";
@@ -81,6 +84,7 @@ export default function ListUsers() {
     useUsers();
   const { isSuperAdmin, selectedCompanyId, companiesReady } =
     useCompanyContext();
+  const { canAdd, canEdit, canDelete } = usePagePermission("users");
   const [view, setView] = useState("list");
   const [editingUser, setEditingUser] = useState(null);
   const [loadingEditUser, setLoadingEditUser] = useState(false);
@@ -247,7 +251,14 @@ export default function ListUsers() {
     fetchUsers({ ...DEFAULT_USER_FILTERS });
   };
 
+  const canManageTargetUser = (targetUser) => {
+    // Only Super Admin can edit/delete/assign Super Admin users
+    if (userIsSuperAdmin(targetUser)) return isSuperAdmin;
+    return true;
+  };
+
   const handleEditUser = async (user) => {
+    if (!canEdit || !canManageTargetUser(user)) return;
     setLoadingEditUser(true);
     try {
       const response = await companyAPI.getUsers({
@@ -268,6 +279,7 @@ export default function ListUsers() {
   };
 
   const openAssignTeamsModal = async (user) => {
+    if (!canEdit || !canManageTargetUser(user)) return;
     try {
       const response = await companyAPI.getUsers({
         userId: user.userId,
@@ -286,6 +298,7 @@ export default function ListUsers() {
   };
 
   const handleDeleteUser = async (user) => {
+    if (!canDelete || !canManageTargetUser(user)) return;
     if (!user?.userId) {
       Swal.fire({
         icon: "error",
@@ -349,23 +362,64 @@ export default function ListUsers() {
   }
 
   if (view === "create" || view === "edit") {
+    if ((view === "create" && !canAdd) || (view === "edit" && !canEdit)) {
+      return (
+        <RequirePageAccess pageKey="users">
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-6 text-center text-sm text-amber-800">
+            You do not have permission to {view === "create" ? "create" : "edit"} users.
+            <button
+              type="button"
+              onClick={() => {
+                setView("list");
+                setEditingUser(null);
+              }}
+              className="mt-3 block w-full font-semibold text-[#003366] underline"
+            >
+              Back to list
+            </button>
+          </div>
+        </RequirePageAccess>
+      );
+    }
+    if (view === "edit" && userIsSuperAdmin(editingUser) && !isSuperAdmin) {
+      return (
+        <RequirePageAccess pageKey="users">
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-6 text-center text-sm text-amber-800">
+            Only Super Admin can edit Super Admin users.
+            <button
+              type="button"
+              onClick={() => {
+                setView("list");
+                setEditingUser(null);
+              }}
+              className="mt-3 block w-full font-semibold text-[#003366] underline"
+            >
+              Back to list
+            </button>
+          </div>
+        </RequirePageAccess>
+      );
+    }
     return (
-      <CreateUser
-        editUser={view === "edit" ? editingUser : null}
-        onBack={() => {
-          setView("list");
-          setEditingUser(null);
-        }}
-        onSuccess={() => {
-          setView("list");
-          setEditingUser(null);
-          refreshUsers();
-        }}
-      />
+      <RequirePageAccess pageKey="users">
+        <CreateUser
+          editUser={view === "edit" ? editingUser : null}
+          onBack={() => {
+            setView("list");
+            setEditingUser(null);
+          }}
+          onSuccess={() => {
+            setView("list");
+            setEditingUser(null);
+            refreshUsers();
+          }}
+        />
+      </RequirePageAccess>
     );
   }
 
   return (
+    <RequirePageAccess pageKey="users">
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -377,14 +431,16 @@ export default function ListUsers() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setView("create")}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-          >
-            <Plus className="h-4 w-4" />
-            Create User
-          </button>
+          {canAdd && (
+            <button
+              type="button"
+              onClick={() => setView("create")}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+            >
+              <Plus className="h-4 w-4" />
+              Create User
+            </button>
+          )}
         </div>
       </div>
 
@@ -721,45 +777,60 @@ export default function ListUsers() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-1">
-                        {userHasPlayerRole(user) && (
-                          <button
-                            type="button"
-                            onClick={() => openAssignTeamsModal(user)}
-                            title="Assign to team"
-                            className="rounded-lg p-2 text-[#00ADE5] transition hover:bg-[#00ADE5]/10"
+                        {userIsSuperAdmin(user) && !isSuperAdmin ? (
+                          <span
+                            className="px-2 text-xs text-gray-400"
+                            title="Only Super Admin can manage Super Admin users"
                           >
-                            <UserPlus size={18} />
-                          </button>
+                            —
+                          </span>
+                        ) : (
+                          <>
+                            {userHasPlayerRole(user) && canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => openAssignTeamsModal(user)}
+                                title="Assign to team"
+                                className="rounded-lg p-2 text-[#00ADE5] transition hover:bg-[#00ADE5]/10"
+                              >
+                                <UserPlus size={18} />
+                              </button>
+                            )}
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => handleEditUser(user)}
+                                disabled={loadingEditUser}
+                                title="Edit user"
+                                className="rounded-lg p-2 text-[#003366] transition hover:bg-[#003366]/10 disabled:opacity-50"
+                              >
+                                <Edit2 size={18} />
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(user)}
+                                disabled={
+                                  deletingUserId === user.userId ||
+                                  user.status === "Inactive"
+                                }
+                                title={
+                                  user.status === "Inactive"
+                                    ? "User is already inactive"
+                                    : "Delete user"
+                                }
+                                className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                              >
+                                {deletingUserId === user.userId ? (
+                                  <Loader2 size={18} className="animate-spin" />
+                                ) : (
+                                  <Trash2 size={18} />
+                                )}
+                              </button>
+                            )}
+                          </>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => handleEditUser(user)}
-                          disabled={loadingEditUser}
-                          title="Edit user"
-                          className="rounded-lg p-2 text-[#003366] transition hover:bg-[#003366]/10 disabled:opacity-50"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteUser(user)}
-                          disabled={
-                            deletingUserId === user.userId ||
-                            user.status === "Inactive"
-                          }
-                          title={
-                            user.status === "Inactive"
-                              ? "User is already inactive"
-                              : "Delete user"
-                          }
-                          className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                        >
-                          {deletingUserId === user.userId ? (
-                            <Loader2 size={18} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={18} />
-                          )}
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -827,5 +898,6 @@ export default function ListUsers() {
         onSuccess={refreshUsers}
       />
     </div>
+    </RequirePageAccess>
   );
 }

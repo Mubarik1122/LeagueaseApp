@@ -42,6 +42,7 @@ import { ToggleSwitch } from "./SetupSettingsUI";
 import { useAuth } from "../../hooks/useAuth";
 import { usePointTypes } from "../../hooks/usePointTypes";
 import { matchAPI } from "../../services/api";
+import { usePagePermission } from "../../hooks/usePagePermission";
 
 const AUTO_APPEARANCES_LABEL = "__auto_calculate_appearances__";
 
@@ -148,6 +149,7 @@ function PredefinedStatTypesPanel({
   onAdd,
   addingPredefined,
   onCreateCustom,
+  canAdd = true,
 }) {
   const allSelected =
     availablePredefined.length > 0 &&
@@ -283,20 +285,24 @@ function PredefinedStatTypesPanel({
             : "Need something unique for your league?"}
         </p>
         <div className="flex flex-wrap gap-3">
-          <SetupPrimaryButton
-            onClick={onAdd}
-            disabled={addingPredefined || !selectedPredefined.length}
-            icon={Plus}
-          >
-            {addingPredefined
-              ? "Adding…"
-              : selectedPredefined.length
-                ? `Add selected (${selectedPredefined.length})`
-                : "Add selected"}
-          </SetupPrimaryButton>
-          <SetupSecondaryButton onClick={onCreateCustom} icon={Sparkles}>
-            Create your own stat type
-          </SetupSecondaryButton>
+          {canAdd && (
+            <SetupPrimaryButton
+              onClick={onAdd}
+              disabled={addingPredefined || !selectedPredefined.length}
+              icon={Plus}
+            >
+              {addingPredefined
+                ? "Adding…"
+                : selectedPredefined.length
+                  ? `Add selected (${selectedPredefined.length})`
+                  : "Add selected"}
+            </SetupPrimaryButton>
+          )}
+          {canAdd && (
+            <SetupSecondaryButton onClick={onCreateCustom} icon={Sparkles}>
+              Create your own stat type
+            </SetupSecondaryButton>
+          )}
         </div>
       </div>
     </div>
@@ -313,6 +319,8 @@ function StatTypeRowContent({
   selected = false,
   onToggleSelect,
   showSelect = false,
+  canEdit = true,
+  canDelete = true,
 }) {
   return (
     <>
@@ -365,24 +373,28 @@ function StatTypeRowContent({
       </td>
       <td className="px-5 py-4">
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => onEdit(item)}
-            disabled={reordering}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#00ADE5] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#0099c7] disabled:opacity-50"
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => onRemove(item)}
-            disabled={reordering}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(item)}
+              disabled={reordering}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#00ADE5] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#0099c7] disabled:opacity-50"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+              Edit
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => onRemove(item)}
+              disabled={reordering}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </button>
+          )}
         </div>
       </td>
     </>
@@ -398,6 +410,8 @@ function SortableStatTypeRow({
   selected,
   onToggleSelect,
   showSelect,
+  canEdit = true,
+  canDelete = true,
 }) {
   const {
     attributes,
@@ -436,6 +450,8 @@ function SortableStatTypeRow({
         selected={selected}
         onToggleSelect={onToggleSelect}
         showSelect={showSelect}
+        canEdit={canEdit}
+        canDelete={canDelete}
       />
     </tr>
   );
@@ -619,6 +635,7 @@ function IndividualStatTypesTab({
   const [reordering, setReordering] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const { canAdd, canEdit, canDelete } = usePagePermission("statistics-setup");
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -729,11 +746,13 @@ function IndividualStatTypesTab({
   }, [activeTypes]);
 
   const openCreateModal = () => {
+    if (!canAdd) return;
     setEditingItem(null);
     setModalOpen(true);
   };
 
   const openEditModal = (item) => {
+    if (!canEdit) return;
     setEditingItem(item);
     setModalOpen(true);
   };
@@ -746,6 +765,7 @@ function IndividualStatTypesTab({
 
   const savePointType = async (form) => {
     if (!userId) return;
+    if (editingItem?.id ? !canEdit : !canAdd) return;
     setSaving(true);
     try {
       if (editingItem?.id) {
@@ -806,6 +826,7 @@ function IndividualStatTypesTab({
   };
 
   const handleRemove = async (item) => {
+    if (!canDelete) return;
     const result = await Swal.fire({
       title: "Delete stat type?",
       text: `"${item.label}" will be permanently deleted. This cannot be undone if match scores are not linked.`,
@@ -834,6 +855,7 @@ function IndividualStatTypesTab({
   };
 
   const handleBulkDelete = async () => {
+    if (!canDelete) return;
     if (!userId || !selectedIds.length) return;
 
     const result = await Swal.fire({
@@ -868,6 +890,7 @@ function IndividualStatTypesTab({
   };
 
   const handleSaveAppearances = async (enabled) => {
+    if (!canEdit) return;
     if (!userId) return;
     setSavingAppearances(true);
     try {
@@ -937,6 +960,7 @@ function IndividualStatTypesTab({
   };
 
   const handleAddPredefined = async () => {
+    if (!canAdd) return;
     if (!userId || !selectedPredefined.length) return;
 
     setAddingPredefined(true);
@@ -1004,6 +1028,7 @@ function IndividualStatTypesTab({
     const { active, over } = event;
     setActiveDragId(null);
 
+    if (!canEdit) return;
     if (!over || active.id === over.id || reordering || !userId) return;
 
     const oldIndex = orderedTypes.findIndex((item) => item.id === active.id);
@@ -1070,7 +1095,7 @@ function IndividualStatTypesTab({
             Drag rows by the handle to change display order
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            {selectedIds.length > 0 && (
+            {selectedIds.length > 0 && canDelete && (
               <>
                 <span className="inline-flex items-center rounded-full bg-[#00ADE5]/10 px-3 py-1 text-xs font-semibold text-[#0088cc]">
                   {selectedIds.length} selected
@@ -1166,6 +1191,8 @@ function IndividualStatTypesTab({
                         selected={selectedIds.includes(item.id)}
                         onToggleSelect={toggleSelect}
                         showSelect
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
                   </SortableContext>
@@ -1210,7 +1237,7 @@ function IndividualStatTypesTab({
             <ToggleSwitch
               checked={autoAppearances}
               onChange={(value) => handleSaveAppearances(value)}
-              disabled={savingAppearances}
+              disabled={savingAppearances || !canEdit}
             />
           </div>
           {savingAppearances && (
@@ -1232,6 +1259,7 @@ function IndividualStatTypesTab({
         onAdd={handleAddPredefined}
         addingPredefined={addingPredefined}
         onCreateCustom={openCreateModal}
+        canAdd={canAdd}
       />
 
       <PointTypeFormModal

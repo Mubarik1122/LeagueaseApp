@@ -26,6 +26,8 @@ import SetupTabHeader, {
   SetupPrimaryButton,
   SetupSecondaryButton,
 } from "../components/setup/SetupTabHeader";
+import RequirePageAccess from "../components/RequirePageAccess";
+import { usePagePermission } from "../hooks/usePagePermission";
 import { useTournament } from "../hooks/useTournament";
 import {
   tournamentAPI,
@@ -340,6 +342,7 @@ const TEAM_FILTER = {
 export default function Competitions() {
   const [searchParams, setSearchParams] = useSearchParams();
   const manageDivisionId = searchParams.get("manage");
+  const { canAdd, canEdit, canDelete } = usePagePermission("competitions");
   const { tournaments, loading, error, fetchTournaments, saveTournament } =
     useTournament();
   const [competitions, setCompetitions] = useState([]);
@@ -425,6 +428,7 @@ export default function Competitions() {
   };
 
   const handleDeleteDivision = async (competition = managingCompetition) => {
+    if (!canDelete) return;
     if (!competition) return;
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -549,7 +553,8 @@ export default function Competitions() {
     teamListFilter === TEAM_FILTER.IN_DIVISION;
   const showTeamDivisionColumn =
     teamListFilter !== TEAM_FILTER.IN_DIVISION;
-  const showTeamActions = teamListFilter === TEAM_FILTER.IN_DIVISION;
+  const showTeamActions =
+    teamListFilter === TEAM_FILTER.IN_DIVISION && (canEdit || canDelete);
   const teamTableColSpan = showTeamActions ? 8 : 7;
 
   useEffect(() => {
@@ -709,6 +714,7 @@ export default function Competitions() {
   };
 
   const handleDivisionSave = async () => {
+    if (!canEdit) return;
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const userId = user.userId;
     const divisionId = getManagedDivisionId(managingCompetition);
@@ -805,6 +811,7 @@ export default function Competitions() {
     );
 
   const handleBulkSaveTeams = async () => {
+    if (!canAdd) return;
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const userId = user.userId;
     const tournamentId = managingDivisionId;
@@ -881,7 +888,7 @@ export default function Competitions() {
   };
 
   const teamCheckboxesEnabled =
-    teamListFilter !== TEAM_FILTER.IN_DIVISION;
+    teamListFilter !== TEAM_FILTER.IN_DIVISION && canAdd;
 
   const toggleTeamRowSelected = (t) => {
     const id = teamRowId(t);
@@ -892,6 +899,7 @@ export default function Competitions() {
   };
 
   const handleAddSelectedTeamsToDivision = async () => {
+    if (!canAdd) return;
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const userId = user.userId;
     const tournamentId = managingDivisionId;
@@ -943,6 +951,7 @@ export default function Competitions() {
   };
 
   const openEditTeam = (team) => {
+    if (!canEdit) return;
     const id = teamRowId(team);
     if (!id) return;
     setTeamEditForm({
@@ -966,6 +975,7 @@ export default function Competitions() {
   };
 
   const handleSaveTeamEdit = async () => {
+    if (!canEdit) return;
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const userId = user.userId;
     const tournamentId = managingDivisionId;
@@ -1042,6 +1052,7 @@ export default function Competitions() {
   };
 
   const handleDetachTeam = async (team) => {
+    if (!canDelete) return;
     const teamId = teamRowId(team);
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const userId = user.userId;
@@ -1112,6 +1123,7 @@ export default function Competitions() {
 
   if (managingCompetition) {
     return (
+      <RequirePageAccess pageKey="competitions">
       <div className="space-y-6">
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#003366] via-[#004080] to-[#003366] shadow-lg shadow-[#003366]/25">
           <div className="relative px-6 py-6 sm:px-8 sm:py-8">
@@ -1205,7 +1217,9 @@ export default function Competitions() {
               aria-label="Team management views"
               className="grid grid-cols-1 gap-3 sm:grid-cols-2"
             >
-              {TEAM_SUB_VIEWS.map((view) => {
+              {TEAM_SUB_VIEWS.filter(
+                (view) => view.id !== "create" || canAdd
+              ).map((view) => {
                 const Icon = view.icon;
                 const isActive = activeTeamTab === view.id;
                 return (
@@ -1343,7 +1357,9 @@ export default function Competitions() {
                         </div>
                       </div>
 
-                      {teamCheckboxesEnabled && selectedTeamIds.length > 0 ? (
+                      {teamCheckboxesEnabled &&
+                      selectedTeamIds.length > 0 &&
+                      canAdd ? (
                         <div className="mb-4 flex flex-wrap items-center gap-3">
                           <button
                             type="button"
@@ -1516,6 +1532,7 @@ export default function Competitions() {
                                     {showTeamActions ? (
                                       <td className="px-4 py-3 sm:px-6">
                                         <div className="flex justify-center gap-1">
+                                          {canEdit && (
                                           <button
                                             type="button"
                                             onClick={() => openEditTeam(t)}
@@ -1525,6 +1542,8 @@ export default function Competitions() {
                                           >
                                             <Edit2 size={18} />
                                           </button>
+                                          )}
+                                          {canDelete && (
                                           <button
                                             type="button"
                                             onClick={() => handleDetachTeam(t)}
@@ -1542,6 +1561,7 @@ export default function Competitions() {
                                               <Unlink size={18} />
                                             )}
                                           </button>
+                                          )}
                                         </div>
                                       </td>
                                     ) : null}
@@ -1556,7 +1576,7 @@ export default function Competitions() {
                   </div>
                 )}
 
-                {activeTeamTab === "create" && (
+                {activeTeamTab === "create" && canAdd && (
                   <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm">
                     <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-white px-6 py-4">
                       <h2 className="text-lg font-bold text-[#003366]">
@@ -1854,6 +1874,7 @@ export default function Competitions() {
                                   ) : null}
                                 </div>
                                 <div className="flex shrink-0 flex-col gap-1 rounded-xl border border-gray-100 bg-gray-50/80 p-1 opacity-90 transition group-hover:border-[#00ADE5]/20 group-hover:bg-white">
+                                  {canEdit && (
                                   <button
                                     type="button"
                                     onClick={() => openEditTeam(t)}
@@ -1863,6 +1884,8 @@ export default function Competitions() {
                                   >
                                     <Edit2 size={15} />
                                   </button>
+                                  )}
+                                  {canDelete && (
                                   <button
                                     type="button"
                                     onClick={() => handleDetachTeam(t)}
@@ -1880,6 +1903,7 @@ export default function Competitions() {
                                       <Unlink size={15} />
                                     )}
                                   </button>
+                                  )}
                                 </div>
                               </div>
                             </li>
@@ -1906,6 +1930,7 @@ export default function Competitions() {
                   your league site.
                 </p>
               </div>
+              {canDelete && (
               <button
                 type="button"
                 onClick={() => handleDeleteDivision()}
@@ -1919,6 +1944,7 @@ export default function Competitions() {
                 )}
                 Delete division
               </button>
+              )}
             </div>
 
             {divisionDetailError && (
@@ -2147,6 +2173,7 @@ export default function Competitions() {
                 </div>
 
                 <div className="flex flex-wrap gap-3 border-t border-gray-100 pt-6">
+                  {canEdit && (
                   <button
                     type="button"
                     disabled={divisionSaving || divisionDetailLoading}
@@ -2162,6 +2189,7 @@ export default function Competitions() {
                       "Save changes"
                     )}
                   </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setManagingCompetition(null)}
@@ -2361,6 +2389,7 @@ export default function Competitions() {
                 >
                   Cancel
                 </button>
+                {canEdit && (
                 <button
                   type="button"
                   onClick={handleSaveTeamEdit}
@@ -2374,30 +2403,37 @@ export default function Competitions() {
                   )}
                   Save changes
                 </button>
+                )}
               </div>
         </Modal>
       </div>
+      </RequirePageAccess>
     );
   }
 
   return (
+    <RequirePageAccess pageKey="competitions">
     <div className="space-y-6">
       <SetupTabHeader
         title="Competitions"
         description="Divisions and tournaments for your season. Create a competition, then use Manage to add teams and fine-tune how it appears on your site."
       >
+        {canAdd && (
         <SetupPrimaryButton
           onClick={() => setShowCreateDivisionModal(true)}
           icon={Plus}
         >
           Create division
         </SetupPrimaryButton>
+        )}
+        {canAdd && (
         <SetupSecondaryButton
           onClick={() => setShowMatchForm(true)}
           icon={Calendar}
         >
           Create match
         </SetupSecondaryButton>
+        )}
       </SetupTabHeader>
 
       {error && (
@@ -2475,6 +2511,7 @@ export default function Competitions() {
                           Create your first division or tournament to start
                           scheduling matches and assigning teams.
                         </p>
+                        {canAdd && (
                         <button
                           type="button"
                           onClick={() => setShowCreateDivisionModal(true)}
@@ -2483,6 +2520,7 @@ export default function Competitions() {
                           <Plus className="h-4 w-4" />
                           Create division
                         </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -2574,6 +2612,7 @@ export default function Competitions() {
                             <Settings className="h-3.5 w-3.5" />
                             Manage
                           </button>
+                          {canDelete && (
                           <button
                             type="button"
                             onClick={() => handleDeleteDivision(competition)}
@@ -2582,6 +2621,7 @@ export default function Competitions() {
                             <Trash2 className="h-3.5 w-3.5" />
                             Delete
                           </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -2593,5 +2633,6 @@ export default function Competitions() {
         </div>
       </div>
     </div>
+    </RequirePageAccess>
   );
 }

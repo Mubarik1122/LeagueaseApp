@@ -13,7 +13,7 @@ function isSuperAdminUser(user) {
     : false;
 }
 
-export default function Roles() {
+export default function Roles({ canEdit = true }) {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -116,6 +116,7 @@ export default function Roles() {
   };
 
   const handleUpdate = async () => {
+    if (!canEdit) return;
     if (isSuperAdmin) {
       Swal.fire({
         icon: "info",
@@ -362,6 +363,7 @@ export default function Roles() {
         >
           Back
         </button>
+        {canEdit && (
         <button
           onClick={handleUpdate}
           disabled={updating || roles.length === 0 || isSuperAdmin}
@@ -379,6 +381,7 @@ export default function Roles() {
             </>
           )}
         </button>
+        )}
       </div>
     </div>
   );

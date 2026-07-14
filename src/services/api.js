@@ -26,7 +26,7 @@ function withCompanyId(payload = {}) {
 
 function appendCompanyIdToParams(params) {
   const companyId = getActiveCompanyId();
-  if (companyId) {
+  if (companyId && !params.has("companyId")) {
     params.append("companyId", companyId);
   }
   return params;
@@ -42,6 +42,66 @@ function buildApiUrl(path, query = {}) {
   appendCompanyIdToParams(params);
   const queryString = params.toString();
   return `${API_BASE_URL}${path}${queryString ? `?${queryString}` : ""}`;
+}
+
+const inflightGetRequests = new Map();
+
+function buildGetDedupeKey(path, query = {}) {
+  const companyId = getActiveCompanyId() || "";
+  const queryPart = Object.keys(query)
+    .sort()
+    .map((key) => `${key}=${String(query[key])}`)
+    .join("&");
+  return `GET:${path}?${queryPart}&cid=${companyId}`;
+}
+
+async function dedupedGet(path, query = {}) {
+  const key = buildGetDedupeKey(path, query);
+  const existing = inflightGetRequests.get(key);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    const response = await fetch(buildApiUrl(path, query), {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  })();
+
+  inflightGetRequests.set(key, promise);
+
+  try {
+    return await promise;
+  } finally {
+    if (inflightGetRequests.get(key) === promise) {
+      inflightGetRequests.delete(key);
+    }
+  }
+}
+
+async function dedupedGetPath(path) {
+  const companyId = getActiveCompanyId() || "";
+  const key = `GET:${path}&cid=${companyId}`;
+  const existing = inflightGetRequests.get(key);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  })();
+
+  inflightGetRequests.set(key, promise);
+
+  try {
+    return await promise;
+  } finally {
+    if (inflightGetRequests.get(key) === promise) {
+      inflightGetRequests.delete(key);
+    }
+  }
 }
 
 // Helper function to handle API responses
@@ -101,7 +161,12 @@ export const authAPI = {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier, password, leagueId }),
+      body: JSON.stringify({
+        identifier,
+        password,
+        leagueId,
+        platformSlug: "web",
+      }),
     });
     return handleResponse(response);
   },
@@ -131,6 +196,25 @@ export const companyAPI = {
     const response = await fetch(`${API_BASE_URL}/company/get-all`, {
       method: "GET",
       headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  save: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/company/save`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+  },
+
+  delete: async (companyIds) => {
+    const ids = Array.isArray(companyIds) ? companyIds : [companyIds];
+    const response = await fetch(`${API_BASE_URL}/company/delete`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ companyIds: ids }),
     });
     return handleResponse(response);
   },
@@ -356,38 +440,244 @@ export const tournamentAPI = {
    * @param {{ divisionOrTournamentId?: string }} [options] — optional filter for one division/tournament
    */
   getByUserId: async (userId, options = {}) => {
-    const params = new URLSearchParams({ userId: String(userId) });
+    const query = { userId: String(userId) };
     const { divisionOrTournamentId } = options;
     if (
       divisionOrTournamentId != null &&
       String(divisionOrTournamentId) !== ""
     ) {
-      params.append(
-        "divisionOrTournamentId",
-        String(divisionOrTournamentId)
-      );
+      query.divisionOrTournamentId = String(divisionOrTournamentId);
     }
-    appendCompanyIdToParams(params);
+    return dedupedGet("/tournament/get-tournament-by-User-Id", query);
+  },
+};
+
+// Page API functions (RBAC)
+export const pageAPI = {
+  getPages: (query = {}) => dedupedGet("/page/get-pages", query),
+
+  getPage: (pageId) => dedupedGetPath(`/page/get-page/${pageId}`),
+
+  upsert: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/page/upsert`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+  },
+
+  delete: async (pageId) => {
+    const response = await fetch(`${API_BASE_URL}/page/delete`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ pageId }),
+    });
+    return handleResponse(response);
+  },
+
+  reorder: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/page/reorder`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+  },
+
+  initializeDefaultPages: async () => {
     const response = await fetch(
-      `${API_BASE_URL}/tournament/get-tournament-by-User-Id?${params.toString()}`,
+      `${API_BASE_URL}/page/initialize-default-pages`,
       {
-        method: "GET",
+        method: "POST",
         headers: getAuthHeaders(),
+        body: JSON.stringify({}),
       }
     );
     return handleResponse(response);
   },
 };
 
-// Role API functions
-export const roleAPI = {
-  getRoles: async () => {
-    const response = await fetch(`${API_BASE_URL}/role/get-roles`, {
-      method: "GET",
+// Menu placement API (where pages appear in the UI)
+export const menuPlacementAPI = {
+  getPlacements: (query = {}) =>
+    dedupedGet("/menu-placement/get-all", query),
+
+  getPlacement: (placementId) =>
+    dedupedGetPath(`/menu-placement/get-menu-placement/${placementId}`),
+
+  upsert: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/menu-placement/upsert`, {
+      method: "POST",
       headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
     });
     return handleResponse(response);
   },
+};
+
+// Permission API functions (RBAC)
+export const permissionAPI = {
+  getPermissions: (query = {}) =>
+    dedupedGet("/permission/get-permissions", query),
+
+  getPermission: (permissionId) =>
+    dedupedGetPath(`/permission/get-permission/${permissionId}`),
+
+  upsert: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/permission/upsert`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+  },
+
+  initializeDefaultPermissions: async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/permission/initialize-default-permissions`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({}),
+      }
+    );
+    return handleResponse(response);
+  },
+};
+
+// Platform API functions (RBAC)
+export const platformAPI = {
+  getPlatforms: (query = {}) => dedupedGet("/platform/get-platforms", query),
+
+  getPlatform: (platformId) =>
+    dedupedGetPath(`/platform/get-platform/${platformId}`),
+
+  upsert: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/platform/upsert`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+  },
+
+  delete: async (platformKey) => {
+    const response = await fetch(`${API_BASE_URL}/platform/delete`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ platformKey }),
+    });
+    return handleResponse(response);
+  },
+
+  initializeDefaultPlatforms: async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/platform/initialize-default-platforms`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({}),
+      }
+    );
+    return handleResponse(response);
+  },
+};
+
+// Role API functions (RBAC)
+export const roleAPI = {
+  getRoles: (query = {}) => dedupedGet("/role/get-roles", query),
+
+  getRole: (roleId) => dedupedGetPath(`/role/get-role/${roleId}`),
+
+  getCompanyRoles: (query = {}) => dedupedGet("/role/get-company-roles", query),
+
+  getRoleAccess: (roleId, query = {}) =>
+    dedupedGet(`/role/get-role-access/${roleId}`, query),
+
+  /** Blank access matrix for creating a new role (company-scoped pages + permissions). */
+  getAccessMatrix: (query = {}) =>
+    dedupedGet("/role/get-access-matrix", query),
+
+  upsert: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/role/upsert`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(withCompanyId(payload)),
+    });
+    return handleResponse(response);
+  },
+
+  initializeDefaultRoles: async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/role/initialize-default-roles`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({}),
+      }
+    );
+    return handleResponse(response);
+  },
+
+  unmapFromCompany: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/role/unmap-from-company`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(withCompanyId(payload)),
+    });
+    return handleResponse(response);
+  },
+
+  assignRole: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/role/assign-role`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(withCompanyId(payload)),
+    });
+    return handleResponse(response);
+  },
+
+  assignMultipleRoles: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/role/assign-multiple-roles`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(withCompanyId(payload)),
+    });
+    return handleResponse(response);
+  },
+
+  removeRole: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/role/remove-role`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(withCompanyId(payload)),
+    });
+    return handleResponse(response);
+  },
+
+  delete: async (roleId) => {
+    const response = await fetch(`${API_BASE_URL}/role/delete`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ roleId }),
+    });
+    return handleResponse(response);
+  },
+
+  getUserRoles: (userId, query = {}) =>
+    dedupedGet(`/role/get-user-roles/${userId}`, query),
+};
+
+// Access API functions (RBAC)
+export const accessAPI = {
+  getMyAccess: () => dedupedGetPath("/access/my-access"),
+
+  checkPermission: (pageKey, permissionKey) =>
+    dedupedGet("/access/check-permission", { pageKey, permissionKey }),
+
+  getUserAccess: (userId) =>
+    dedupedGetPath(`/access/user-access/${userId}`),
 };
 
 // Settings API functions

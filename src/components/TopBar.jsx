@@ -1,6 +1,7 @@
-import { Search, ChevronDown, Bell, Settings as SettingsIcon, Building2 } from "lucide-react";
+import { Search, ChevronDown, Bell, Settings as SettingsIcon, Building2, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useCompanyContext } from "../context/CompanyContext";
+import { useAuthContext } from "../context/AuthContext";
 
 export default function TopBar() {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -11,6 +12,15 @@ export default function TopBar() {
     setSelectedCompanyId,
     loadingCompanies,
   } = useCompanyContext();
+  const { refreshAccess, accessRefreshing } = useAuthContext();
+
+  const handleRefreshAccess = async () => {
+    const result = await refreshAccess({ force: true });
+    if (result?.success && !result.skipped) {
+      // Soft feedback — menu rebuilds from updated user.platforms
+      return;
+    }
+  };
 
   return (
     <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 h-16 fixed top-0 right-0 left-0 z-30 lg:left-64 shadow-sm">
@@ -79,6 +89,21 @@ export default function TopBar() {
               className="pl-10 pr-4 py-2 w-48 lg:w-64 rounded-lg border border-gray-300 focus:outline-none focus:border-[#00ADE5] focus:ring-2 focus:ring-[#00ADE5]/20 transition-all duration-200 text-sm bg-gray-50 hover:bg-white"
             />
           </div>
+
+          {/* Refresh access / permissions */}
+          <button
+            type="button"
+            onClick={handleRefreshAccess}
+            disabled={accessRefreshing}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50"
+            aria-label="Refresh access"
+            title="Refresh permissions"
+          >
+            <RefreshCw
+              size={20}
+              className={`text-gray-600 ${accessRefreshing ? "animate-spin" : ""}`}
+            />
+          </button>
 
           {/* Notifications */}
           <div className="relative">

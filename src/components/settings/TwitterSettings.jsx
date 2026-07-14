@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 
-export default function TwitterSettings() {
+export default function TwitterSettings({ canEdit = true }) {
   const [formData, setFormData] = useState({
     apiKey: "",
     apiSecret: "",
@@ -53,6 +53,7 @@ export default function TwitterSettings() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!canEdit) return;
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
     const userId = user?.userId;
@@ -250,6 +251,7 @@ export default function TwitterSettings() {
           </div>
 
           {/* Buttons */}
+          {canEdit && (
           <div className="flex gap-4">
             <button
               type="submit"
@@ -276,6 +278,7 @@ export default function TwitterSettings() {
               Cancel
             </button>
           </div>
+          )}
         </form>
       </div>
     </div>

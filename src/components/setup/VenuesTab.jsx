@@ -23,6 +23,7 @@ import SetupTabHeader, { SetupPrimaryButton } from "./SetupTabHeader";
 import { useVenue } from "../../hooks/useVenue";
 import { venueAPI } from "../../services/api";
 import { useCompanyContext } from "../../context/CompanyContext";
+import { usePagePermission } from "../../hooks/usePagePermission";
 
 function getVenueTeams(venue) {
   if (!venue || typeof venue !== "object") return [];
@@ -104,6 +105,7 @@ function DetailRow({ label, value, className = "" }) {
 export default function VenuesTab() {
   const { isSuperAdmin, selectedCompanyId, companiesReady } =
     useCompanyContext();
+  const { canAdd, canEdit, canDelete } = usePagePermission("venues");
   const { venues, loading, fetchVenues, saveVenue, deleteVenue } = useVenue();
   const autocompleteServiceRef = useRef(null);
   const debounceRef = useRef(null);
@@ -268,6 +270,7 @@ export default function VenuesTab() {
   };
 
   const openCreate = () => {
+    if (!canAdd) return;
     setMode("create");
     resetForm();
     setShowModal(true);
@@ -305,6 +308,7 @@ export default function VenuesTab() {
   };
 
   const openEdit = (venue) => {
+    if (!canEdit) return;
     closeView();
     setMode("edit");
     setForm({
@@ -330,6 +334,7 @@ export default function VenuesTab() {
   };
 
   const handleSubmit = async () => {
+    if (mode === "create" ? !canAdd : !canEdit) return;
     if (!form.venueName.trim()) {
       Swal.fire({
         icon: "warning",
@@ -394,6 +399,7 @@ export default function VenuesTab() {
   };
 
   const handleDelete = async (venue) => {
+    if (!canDelete) return;
     const venueId = venue._id || venue.venueId;
     const userId = getUserId();
     if (!venueId || !userId) return;
@@ -488,9 +494,11 @@ export default function VenuesTab() {
         title="Venues"
         description="Create and manage grounds and facilities for your league. Link venues to teams and use them when scheduling matches."
       >
-        <SetupPrimaryButton onClick={openCreate} icon={Plus}>
-          Create venue
-        </SetupPrimaryButton>
+        {canAdd && (
+          <SetupPrimaryButton onClick={openCreate} icon={Plus}>
+            Create venue
+          </SetupPrimaryButton>
+        )}
       </SetupTabHeader>
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -502,12 +510,14 @@ export default function VenuesTab() {
               <MapPin className="text-[#00ADE5]" size={28} />
             </span>
             <p className="font-medium text-gray-700">No Record found.</p>
-            <button
-              onClick={openCreate}
-              className="mt-3 text-sm font-semibold text-[#00ADE5] hover:underline"
-            >
-              Create your first venue
-            </button>
+            {canAdd && (
+              <button
+                onClick={openCreate}
+                className="mt-3 text-sm font-semibold text-[#00ADE5] hover:underline"
+              >
+                Create your first venue
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -594,24 +604,28 @@ export default function VenuesTab() {
                         >
                           <Eye size={18} />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => openEdit(venue)}
-                          className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50"
-                          title="Edit venue"
-                          aria-label={`Edit ${venue.venueName || "venue"}`}
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(venue)}
-                          className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50"
-                          title="Delete venue"
-                          aria-label={`Delete ${venue.venueName || "venue"}`}
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => openEdit(venue)}
+                            className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50"
+                            title="Edit venue"
+                            aria-label={`Edit ${venue.venueName || "venue"}`}
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(venue)}
+                            className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50"
+                            title="Delete venue"
+                            aria-label={`Delete ${venue.venueName || "venue"}`}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -779,14 +793,16 @@ export default function VenuesTab() {
               >
                 Close
               </button>
-              <button
-                type="button"
-                onClick={() => openEdit(viewVenue)}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-5 py-2.5 font-semibold text-white hover:from-[#002244] hover:to-[#003366]"
-              >
-                <Edit2 size={16} />
-                Edit Venue
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => openEdit(viewVenue)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#003366] to-[#004080] px-5 py-2.5 font-semibold text-white hover:from-[#002244] hover:to-[#003366]"
+                >
+                  <Edit2 size={16} />
+                  Edit Venue
+                </button>
+              )}
             </div>
         </Modal>
       )}

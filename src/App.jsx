@@ -35,6 +35,15 @@ import ResultSummary from "./pages/results/ResultSummary";
 import ResultsLayout from "./pages/results/ResultsLayout";
 import StandingsAdjustments from "./pages/results/StandingsAdjustments";
 import StatisticsDownload from "./pages/results/StatisticsDownload";
+import RbacLayout, { RbacIndexRedirect } from "./pages/rbac/RbacLayout";
+import CompanyManagement from "./pages/rbac/CompanyManagement";
+import UserManagement from "./pages/rbac/UserManagement";
+import PlatformManagement from "./pages/rbac/PlatformManagement";
+import PagesManagement from "./pages/rbac/PagesManagement";
+import PermissionsManagement from "./pages/rbac/PermissionsManagement";
+import MenuPlacementManagement from "./pages/rbac/MenuPlacementManagement";
+import CompanyRolesList from "./pages/rbac/roles/CompanyRolesList";
+import RoleUpsert from "./pages/rbac/roles/RoleUpsert";
 import Teams from "./pages/Teams";
 import Standings from "./pages/Standings";
 import VenueManagement from "./pages/VenueManagement";
@@ -115,6 +124,22 @@ function App() {
                         path="statistics"
                         element={<StatisticsDownload />}
                       />
+                    </Route>
+                    <Route path="rbac/*" element={<RbacLayout />}>
+                      <Route index element={<RbacIndexRedirect />} />
+                      <Route path="companies" element={<CompanyManagement />} />
+                      <Route path="roles" element={<CompanyRolesList />} />
+                      <Route path="roles/upsert" element={<RoleUpsert />} />
+                      <Route path="users" element={<UserManagement />} />
+                      <Route path="platforms" element={<PlatformManagement />} />
+                      <Route path="permissions" element={<PermissionsManagement />} />
+                      <Route path="menu-placements" element={<MenuPlacementManagement />} />
+                      <Route path="pages/*" element={<PagesManagement />} />
+                      {/* Legacy redirects */}
+                      <Route path="roles/assign" element={<Navigate to="/dashboard/rbac/users" replace />} />
+                      <Route path="roles/user-roles" element={<Navigate to="/dashboard/rbac/users?tab=lookup" replace />} />
+                      <Route path="initialize" element={<Navigate to="/dashboard/rbac/platforms" replace />} />
+                      <Route path="access/*" element={<Navigate to="/dashboard/rbac/users" replace />} />
                     </Route>
                     <Route path="account" element={<Account />} />
                     <Route path="billing" element={<Billing />} />

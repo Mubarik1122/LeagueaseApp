@@ -9,9 +9,11 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { primaryButtonClass, selectClass } from "./resultTheme";
+import { usePagePermission } from "../../hooks/usePagePermission";
 
 export default function StandingsAdjustments() {
   const [selectedDivision, setSelectedDivision] = useState("Division 1");
+  const { canAdd } = usePagePermission("results");
 
   return (
     <div className="space-y-6">
@@ -73,10 +75,12 @@ export default function StandingsAdjustments() {
               {selectedDivision} · manual points and position overrides
             </p>
           </div>
-          <button type="button" className={primaryButtonClass}>
-            <Plus className="h-4 w-4" />
-            Create new
-          </button>
+          {canAdd && (
+            <button type="button" className={primaryButtonClass}>
+              <Plus className="h-4 w-4" />
+              Create new
+            </button>
+          )}
         </div>
         <div className="flex flex-col items-center justify-center gap-2 px-5 py-16 text-center">
           <div className="rounded-full bg-[#00ADE5]/10 p-3">

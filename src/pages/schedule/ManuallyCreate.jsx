@@ -35,6 +35,7 @@ import {
   getMinDateForMatchCreate,
   isPastMatchDateTime,
 } from "../../utils/matchScheduleDateTime";
+import RequirePageAccess from "../../components/RequirePageAccess";
 
 const TABS = [
   { id: "division", label: "Division Matches" },
@@ -1201,52 +1202,54 @@ export default function ManuallyCreate() {
   const [activeTab, setActiveTab] = useState("division");
 
   return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#00ADE5]">
-          Schedule
-        </p>
-        <h2 className="mt-1 text-xl font-bold tracking-tight text-[#003366] sm:text-2xl">
-          Manually Create
-        </h2>
-        <p className="mt-1 max-w-2xl text-sm text-gray-500">
-          Pick teams and a kick-off time to create fixtures for your league.
-        </p>
-      </div>
+    <RequirePageAccess pageKey="match-schedule" permission="add">
+      <div className="space-y-5">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#00ADE5]">
+            Schedule
+          </p>
+          <h2 className="mt-1 text-xl font-bold tracking-tight text-[#003366] sm:text-2xl">
+            Manually Create
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm text-gray-500">
+            Pick teams and a kick-off time to create fixtures for your league.
+          </p>
+        </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm">
-        <nav
-          className="flex gap-1 overflow-x-auto border-b border-gray-100 bg-slate-50/60 p-2"
-          aria-label="Manual create modes"
-        >
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={clsx(
-                "shrink-0 rounded-xl px-4 py-2.5 text-xs font-bold tracking-wide transition",
-                activeTab === tab.id
-                  ? "bg-gradient-to-r from-[#003366] to-[#004080] text-white shadow-sm"
-                  : "text-gray-500 hover:bg-white hover:text-[#003366]"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+        <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm">
+          <nav
+            className="flex gap-1 overflow-x-auto border-b border-gray-100 bg-slate-50/60 p-2"
+            aria-label="Manual create modes"
+          >
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={clsx(
+                  "shrink-0 rounded-xl px-4 py-2.5 text-xs font-bold tracking-wide transition",
+                  activeTab === tab.id
+                    ? "bg-gradient-to-r from-[#003366] to-[#004080] text-white shadow-sm"
+                    : "text-gray-500 hover:bg-white hover:text-[#003366]"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
 
-        <div className="p-5 sm:p-6">
-          {activeTab === "division" && <ManualMatchesPanel mode="division" />}
-          {activeTab === "inter-division" && (
-            <ManualMatchesPanel mode="inter-division" />
-          )}
-          {activeTab === "other" && <ManualMatchesPanel mode="other" />}
-          {activeTab === "spreadsheet" && (
-            <PlaceholderTab label="Spreadsheet Upload" />
-          )}
+          <div className="p-5 sm:p-6">
+            {activeTab === "division" && <ManualMatchesPanel mode="division" />}
+            {activeTab === "inter-division" && (
+              <ManualMatchesPanel mode="inter-division" />
+            )}
+            {activeTab === "other" && <ManualMatchesPanel mode="other" />}
+            {activeTab === "spreadsheet" && (
+              <PlaceholderTab label="Spreadsheet Upload" />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </RequirePageAccess>
   );
 }

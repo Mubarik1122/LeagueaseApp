@@ -32,6 +32,7 @@ import FieldAvailabilityHint, {
 } from "../FieldAvailabilityHint";
 import { useCompanyUserFieldCheck } from "../../hooks/useCompanyUserFieldCheck";
 import SetupTabHeader, { SetupPrimaryButton } from "./SetupTabHeader";
+import { usePagePermission } from "../../hooks/usePagePermission";
 
 const divisionSelectStyles = {
   control: (base, state) => ({
@@ -375,6 +376,7 @@ function getTeamDivisions(team) {
 export default function TeamsTab() {
   const { isSuperAdmin, selectedCompanyId, companiesReady } =
     useCompanyContext();
+  const { canAdd, canEdit, canDelete } = usePagePermission("teams");
   const [teams, setTeams] = useState([]);
   const [divisions, setDivisions] = useState([]);
   const [venues, setVenues] = useState([]);
@@ -740,12 +742,14 @@ export default function TeamsTab() {
   };
 
   const openCreateModal = () => {
+    if (!canAdd) return;
     setForm(EMPTY_FORM);
     setModalMode("create");
     setShowModal(true);
   };
 
   const openEditModal = (team) => {
+    if (!canEdit) return;
     const teamId = getTeamId(team);
     if (!teamId) return;
 
@@ -824,6 +828,7 @@ export default function TeamsTab() {
   };
 
   const handleDeleteTeam = async (team) => {
+    if (!canDelete) return;
     const teamId = getTeamId(team);
     const userId = getUserId();
     const teamName = team.teamName || "this team";
@@ -891,6 +896,7 @@ export default function TeamsTab() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (modalMode === "edit" ? !canEdit : !canAdd) return;
 
     const teamName = form.teamName.trim();
     if (!teamName) {
@@ -1133,9 +1139,11 @@ export default function TeamsTab() {
         title="Teams"
         description="Create and manage squads across your league. Assign divisions, venues, and players to build each team roster."
       >
-        <SetupPrimaryButton onClick={openCreateModal} icon={Plus}>
-          Create team
-        </SetupPrimaryButton>
+        {canAdd && (
+          <SetupPrimaryButton onClick={openCreateModal} icon={Plus}>
+            Create team
+          </SetupPrimaryButton>
+        )}
       </SetupTabHeader>
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -1148,13 +1156,15 @@ export default function TeamsTab() {
             <p className="mt-1 text-sm text-gray-500">
               Create your first team — division assignment is optional.
             </p>
-            <button
-              type="button"
-              onClick={openCreateModal}
-              className="mt-4 text-sm font-semibold text-[#00ADE5] hover:underline"
-            >
-              Create team
-            </button>
+            {canAdd && (
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="mt-4 text-sm font-semibold text-[#00ADE5] hover:underline"
+              >
+                Create team
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -1231,30 +1241,34 @@ export default function TeamsTab() {
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="flex items-center justify-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(team)}
-                            disabled={isDeleting}
-                            className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            title="Edit team"
-                            aria-label={`Edit ${team.teamName || "team"}`}
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteTeam(team)}
-                            disabled={isDeleting}
-                            className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            title="Delete team"
-                            aria-label={`Delete ${team.teamName || "team"}`}
-                          >
-                            {isDeleting ? (
-                              <Loader2 size={18} className="animate-spin" />
-                            ) : (
-                              <Trash2 size={18} />
-                            )}
-                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(team)}
+                              disabled={isDeleting}
+                              className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              title="Edit team"
+                              aria-label={`Edit ${team.teamName || "team"}`}
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTeam(team)}
+                              disabled={isDeleting}
+                              className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              title="Delete team"
+                              aria-label={`Delete ${team.teamName || "team"}`}
+                            >
+                              {isDeleting ? (
+                                <Loader2 size={18} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={18} />
+                              )}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

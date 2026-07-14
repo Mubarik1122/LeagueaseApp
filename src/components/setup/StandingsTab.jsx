@@ -8,6 +8,7 @@ import {
   Settings2,
 } from "lucide-react";
 import SetupTabHeader, { SetupSecondaryButton } from "./SetupTabHeader";
+import { usePagePermission } from "../../hooks/usePagePermission";
 
 const FEATURES = [
   {
@@ -34,6 +35,7 @@ const FEATURES = [
 
 export default function StandingsTab() {
   const navigate = useNavigate();
+  const { canEdit } = usePagePermission("standings");
 
   return (
     <div className="space-y-6">
@@ -41,12 +43,14 @@ export default function StandingsTab() {
         title="Standings"
         description="Configure how standings are calculated and displayed for each competition. Set points, promotion zones, and public visibility."
       >
-        <SetupSecondaryButton
-          onClick={() => navigate("/dashboard/standings")}
-          icon={ArrowRight}
-        >
-          Go to standings setup
-        </SetupSecondaryButton>
+        {canEdit && (
+          <SetupSecondaryButton
+            onClick={() => navigate("/dashboard/standings")}
+            icon={ArrowRight}
+          >
+            Go to standings setup
+          </SetupSecondaryButton>
+        )}
       </SetupTabHeader>
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">

@@ -29,7 +29,7 @@ const sideMenuItems = [
   { id: "match-file", label: "Match File Upload", icon: ClipboardList },
 ];
 
-export default function LeagueOptions() {
+export default function LeagueOptions({ canEdit = true }) {
   const [activeMenuItem, setActiveMenuItem] = useState("team-admin");
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -98,6 +98,7 @@ export default function LeagueOptions() {
   };
 
   const handleSave = async () => {
+    if (!canEdit) return;
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
     const userId = user?.userId;
@@ -250,6 +251,7 @@ export default function LeagueOptions() {
               </table>
             </div>
 
+            {canEdit && (
             <div className="mt-6 flex gap-4">
               <button
                 onClick={handleSave}
@@ -258,6 +260,7 @@ export default function LeagueOptions() {
                 Save Settings
               </button>
             </div>
+            )}
           </div>
         );
       default:

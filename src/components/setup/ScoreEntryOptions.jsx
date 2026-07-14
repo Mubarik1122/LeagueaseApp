@@ -23,6 +23,7 @@ import {
   SetupTip,
   InlineNumberField,
 } from "./SetupSettingsUI";
+import { usePagePermission } from "../../hooks/usePagePermission";
 
 const PERMISSION_OPTIONS = [
   {
@@ -115,6 +116,7 @@ function countEnabled(config, items) {
 }
 
 export default function ScoreEntryOptions() {
+  const { canEdit } = usePagePermission("score-entry-options");
   const [config, setConfig] = useState({
     allowScoreEntry: true,
     requireApproval: false,
@@ -171,6 +173,7 @@ export default function ScoreEntryOptions() {
     );
 
   const handleSave = async () => {
+    if (!canEdit) return;
     setLoading(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -290,7 +293,7 @@ export default function ScoreEntryOptions() {
         </SettingsSection>
       </div>
 
-      <SetupFooter onSave={handleSave} loading={loading} />
+      {canEdit && <SetupFooter onSave={handleSave} loading={loading} />}
 
       <SetupTip>
         <strong className="font-semibold text-gray-800">Best practice:</strong>{" "}
