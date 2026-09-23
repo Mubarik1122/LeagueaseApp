@@ -86,6 +86,19 @@ function divisionIdFromTournamentRow(t) {
   return raw != null && String(raw).trim() !== "" ? String(raw).trim() : "";
 }
 
+/** Season may be a string or `{ seasonId, seasonName, ... }`. */
+function seasonLabel(season) {
+  if (season == null || season === "") return "N/A";
+  if (typeof season === "string" || typeof season === "number") {
+    return String(season);
+  }
+  if (typeof season === "object") {
+    const name = season.seasonName ?? season.name;
+    if (name != null && String(name).trim() !== "") return String(name);
+  }
+  return "N/A";
+}
+
 function getManagedDivisionId(comp) {
   if (!comp) return "";
   const fromField = comp.divisionOrTournamentId ?? comp.id;
@@ -405,7 +418,7 @@ export default function Competitions() {
             tournament.divisionOrTournamentType ||
             tournament.type ||
             "Division",
-          season: tournament.season || "N/A",
+          season: seasonLabel(tournament.season),
           teams:
             tournament.teamCount ??
             tournament.teamsCount ??

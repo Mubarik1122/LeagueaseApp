@@ -32,9 +32,11 @@ import MassDelete from "./pages/schedule/MassDelete";
 import Conflicts from "./pages/schedule/Conflicts";
 import Download from "./pages/schedule/Download";
 import ResultSummary from "./pages/results/ResultSummary";
+import MaintainResults from "./pages/results/MaintainResults";
 import ResultsLayout from "./pages/results/ResultsLayout";
 import StandingsAdjustments from "./pages/results/StandingsAdjustments";
 import StatisticsDownload from "./pages/results/StatisticsDownload";
+import MatchStatistics from "./pages/results/MatchStatistics";
 import RbacLayout, { RbacIndexRedirect } from "./pages/rbac/RbacLayout";
 import CompanyManagement from "./pages/rbac/CompanyManagement";
 import UserManagement from "./pages/rbac/UserManagement";
@@ -114,8 +116,10 @@ function App() {
                       <Route path="conflicts" element={<Conflicts />} />
                       <Route path="download" element={<Download />} />
                     </Route>
+                    <Route path="results/match/:matchId" element={<MatchStatistics />} />
                     <Route path="results/*" element={<ResultsLayout />}>
                       <Route index element={<ResultSummary />} />
+                      <Route path="maintain" element={<MaintainResults />} />
                       <Route
                         path="standings"
                         element={<StandingsAdjustments />}

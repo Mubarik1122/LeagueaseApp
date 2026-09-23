@@ -87,20 +87,36 @@ export default function Seasons() {
   const [viewSeason, setViewSeason] = useState(null);
   const loadRequestIdRef = useRef(0);
 
-  const normalizeSeason = (season) => ({
-    _id: season?._id || season?.seasonId || "",
-    seasonName: season?.seasonName || "",
-    seasonStartDate: toDateInputValue(
-      season?.startDate || season?.seasonStartDate || ""
-    ),
-    seasonEndDate: toDateInputValue(
-      season?.endDate || season?.seasonEndDate || ""
-    ),
-    isHidden: season?.hidden ?? season?.isHidden ?? false,
-    isLocked: season?.locked ?? season?.isLocked ?? false,
-    isDefault: season?.isDefault ?? false,
-    isCurrent: season?.isCurrent ?? false,
-  });
+  const normalizeSeason = (season) => {
+    const primaryRaw = season?.isPrimary ?? season?.isDefault ?? season?.primary;
+    const isDefault =
+      primaryRaw === true ||
+      primaryRaw === 1 ||
+      primaryRaw === "1" ||
+      String(primaryRaw).toLowerCase() === "true";
+
+    return {
+      _id: season?._id || season?.seasonId || "",
+      seasonName: season?.seasonName || "",
+      seasonStartDate: toDateInputValue(
+        season?.startDate || season?.seasonStartDate || ""
+      ),
+      seasonEndDate: toDateInputValue(
+        season?.endDate || season?.seasonEndDate || ""
+      ),
+      isHidden: season?.hidden ?? season?.isHidden ?? false,
+      isLocked: season?.locked ?? season?.isLocked ?? false,
+      isDefault,
+      isCurrent: season?.isCurrent ?? false,
+    };
+  };
+
+  const parseSeasonList = (data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.seasons)) return data.seasons;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  };
 
   useEffect(() => {
     if (isSuperAdmin && (!companiesReady || !selectedCompanyId)) {
@@ -116,7 +132,7 @@ export default function Seasons() {
         const response = await seasonAPI.getAll();
         if (cancelled || requestId !== loadRequestIdRef.current) return;
 
-        const list = Array.isArray(response?.data) ? response.data : [];
+        const list = parseSeasonList(response?.data);
         setSeasons(list.map(normalizeSeason));
       } catch (error) {
         if (cancelled || requestId !== loadRequestIdRef.current) return;
@@ -144,10 +160,10 @@ export default function Seasons() {
     const requestId = ++loadRequestIdRef.current;
     setLoading(true);
     try {
-      const response = await seasonAPI.getAll();
+      const response = await seasonAPI.getAll({ force: true });
       if (requestId !== loadRequestIdRef.current) return;
 
-      const list = Array.isArray(response?.data) ? response.data : [];
+      const list = parseSeasonList(response?.data);
       setSeasons(list.map(normalizeSeason));
     } catch (error) {
       if (requestId !== loadRequestIdRef.current) return;
@@ -285,12 +301,63 @@ export default function Seasons() {
   };
 
   const setAsDefault = async (seasonId) => {
-    setSeasons((prev) =>
-      prev.map((s) => ({
-        ...s,
-        isDefault: s._id === seasonId,
-      }))
+    if (!canEdit) return;
+    const season = seasons.find((s) => s._id === seasonId);
+    if (!season || season.isDefault) return;
+
+    const previousDefault = seasons.find(
+      (s) => s.isDefault && s._id !== seasonId
     );
+
+    setLoading(true);
+    try {
+      // Clear previous primary first (backend may not auto-switch)
+      if (previousDefault) {
+        await seasonAPI.save({
+          seasonId: previousDefault._id,
+          seasonName: previousDefault.seasonName,
+          startDate: previousDefault.seasonStartDate,
+          endDate: previousDefault.seasonEndDate,
+          isPrimary: false,
+        });
+      }
+
+      await seasonAPI.save({
+        seasonId,
+        seasonName: season.seasonName,
+        startDate: season.seasonStartDate,
+        endDate: season.seasonEndDate,
+        isPrimary: true,
+      });
+
+      // Optimistic UI so star switches immediately
+      setSeasons((prev) =>
+        prev.map((s) => ({
+          ...s,
+          isDefault: s._id === seasonId,
+        }))
+      );
+
+      await reloadSeasons();
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Default season updated",
+        timer: 1600,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error("Error setting default season:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to set default season",
+      });
+      await reloadSeasons();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteSeason = async (seasonId) => {
@@ -408,7 +475,12 @@ export default function Seasons() {
                       {season.isDefault ? (
                         <Star className="inline-block text-yellow-500" size={18} fill="currentColor" />
                       ) : (
-                        <button onClick={() => setAsDefault(season._id)} className="text-gray-400 hover:text-yellow-500">
+                        <button
+                          type="button"
+                          onClick={() => setAsDefault(season._id)}
+                          disabled={!canEdit || loading}
+                          className="text-gray-400 hover:text-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
                           <Star size={18} />
                         </button>
                       )}

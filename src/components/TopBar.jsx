@@ -64,19 +64,6 @@ export default function TopBar() {
             </div>
           )}
 
-          {/* Season Selector */}
-          <div className="hidden md:block relative">
-            <label className="text-xs text-gray-600 mr-2 font-medium">Season</label>
-            <select className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:border-[#00ADE5] focus:ring-2 focus:ring-[#00ADE5]/20 transition-all duration-200 text-sm font-medium text-gray-700 hover:border-gray-400 cursor-pointer">
-              <option>2024-2025</option>
-              <option>2023-2024</option>
-            </select>
-            <ChevronDown
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-              size={16}
-            />
-          </div>
-
           {/* Search */}
           <div className="relative hidden sm:block">
             <Search

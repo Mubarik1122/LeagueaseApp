@@ -78,7 +78,12 @@ export default function AdminHome() {
         tournament.divisionOrTournamentType ||
         tournament.type ||
         'Division',
-      season: tournament.season || 'N/A',
+      season:
+        typeof tournament.season === "object" && tournament.season != null
+          ? tournament.season.seasonName ||
+            tournament.season.name ||
+            "N/A"
+          : tournament.season || "N/A",
       status: tournament.status || 'Active',
     };
     });

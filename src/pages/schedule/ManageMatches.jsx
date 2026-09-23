@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Calendar,
   CalendarRange,
   CheckCircle2,
+  ClipboardList,
   Edit2,
   Filter,
   Home,
@@ -106,12 +108,22 @@ function DateStatusBadge({ dateStatus, status }) {
 }
 
 export default function ManageMatches() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { matches, companyMeta, loading, error, fetchMatches } =
     useCompanyMatches();
   const { isSuperAdmin, selectedCompanyId, companiesReady } =
     useCompanyContext();
   const { canAdd, canEdit, canDelete } = usePagePermission("match-schedule");
-  const [filters, setFilters] = useState({ ...DEFAULT_MATCH_FILTERS });
+  const [filters, setFilters] = useState(() => {
+    const dateFrom = searchParams.get("dateFrom");
+    const dateTo = searchParams.get("dateTo");
+    return {
+      ...DEFAULT_MATCH_FILTERS,
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo ? { dateTo } : {}),
+    };
+  });
   const [divisions, setDivisions] = useState([]);
   const [teams, setTeams] = useState([]);
   const [venues, setVenues] = useState([]);
@@ -628,7 +640,41 @@ export default function ManageMatches() {
                       {match.venueName}
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const matchId = String(
+                              match.matchId || match._id || ""
+                            );
+                            if (!matchId) return;
+
+                            const confirmation = await Swal.fire({
+                              icon: "question",
+                              title: "Update result?",
+                              text: "Are you sure you want to update match result?",
+                              showCancelButton: true,
+                              confirmButtonColor: "#003366",
+                              cancelButtonColor: "#6b7280",
+                              confirmButtonText: "Yes, continue",
+                              cancelButtonText: "Cancel",
+                            });
+
+                            if (!confirmation.isConfirmed) return;
+
+                            navigate(
+                              `/dashboard/results/match/${encodeURIComponent(
+                                matchId
+                              )}`,
+                              { state: { match } }
+                            );
+                          }}
+                          title="Enter result"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#00ADE5]/30 bg-[#00ADE5]/10 px-2.5 py-1.5 text-xs font-bold text-[#003366] transition hover:bg-[#00ADE5] hover:text-white"
+                        >
+                          <ClipboardList size={14} />
+                          Result
+                        </button>
                         {canEdit && (
                           <button
                             type="button"

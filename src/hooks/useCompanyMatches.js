@@ -27,7 +27,23 @@ export function mapCompanyMatch(match) {
     homeScore: match?.homeScore,
     awayScore: match?.awayScore,
     note: match?.note,
-    scoreLocked: match?.scoreLocked,
+    displayNote: Boolean(match?.displayNote),
+    scoreLocked: Boolean(match?.scoreLocked),
+    homeStatsLocked: Boolean(match?.homeStatsLocked),
+    awayStatsLocked: Boolean(match?.awayStatsLocked),
+    resultApproved: Boolean(
+      match?.resultApproved ?? match?.approved ?? match?.isApproved
+    ),
+    homeStatsEntered:
+      Boolean(match?.homeStatsEntered ?? match?.hasHomeStats) ||
+      Number(match?.homeStatsCount) > 0 ||
+      Boolean(match?.homeTeam?.hasStats),
+    awayStatsEntered:
+      Boolean(
+        match?.awayStatsEntered ?? match?.hasAwayStats ?? match?.hasRoadStats
+      ) ||
+      Number(match?.awayStatsCount) > 0 ||
+      Boolean(match?.awayTeam?.hasStats),
   };
 }
 

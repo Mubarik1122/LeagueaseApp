@@ -104,6 +104,53 @@ body {
   animation: fade-in 0.8s ease-out;
 }
 
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animation-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+}
+
+.animate-soft-pulse {
+  animation: soft-pulse 2s ease-in-out infinite;
+}
+
 /* Modal / popup entrance */
 @keyframes modal-backdrop-in {
   from {
@@ -144,7 +191,11 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-modal-backdrop,
-  .animate-modal-content {
+  .animate-modal-content,
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-soft-pulse,
+  .animate-blob {
     animation: none;
   }
 }

@@ -944,14 +944,7 @@ export const playerAPI = {
   },
 
   getByTeam: async (teamId) => {
-    const response = await fetch(
-      buildApiUrl("/tournament/get-players-by-team", { teamId }),
-      {
-        method: "GET",
-        headers: getAuthHeaders(),
-      }
-    );
-    return handleResponse(response);
+    return dedupedGet("/tournament/get-players-by-team", { teamId });
   },
 
   /** DELETE /tournament/remove-player-from-team/{playerId}?teamId=&userId= */
@@ -1021,6 +1014,9 @@ export function buildMatchSavePayload(input = {}) {
     scoreLocked: Boolean(input.scoreLocked ?? false),
     homeStatsLocked: Boolean(input.homeStatsLocked ?? false),
     awayStatsLocked: Boolean(input.awayStatsLocked ?? false),
+    resultApproved: Boolean(
+      input.resultApproved ?? input.approved ?? false
+    ),
   };
 
   if (input.matchId) {
@@ -1061,6 +1057,62 @@ export const matchAPI = {
     return handleResponse(response);
   },
 
+  /**
+   * POST /match/save-result
+   * Body: { matchId, homeScore, awayScore, approved, lockHome, lockRoad, companyId? }
+   */
+  saveResult: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/match/save-result`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(withCompanyId(payload)),
+    });
+    return handleResponse(response);
+  },
+
+  /**
+   * POST /match/save-team-stats
+   * Body: { userId, matchId, teamId, updateMatchScore?, players: [{ playerId, stats }], companyId? }
+   */
+  saveTeamStats: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/match/save-team-stats`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(withCompanyId(payload)),
+    });
+    return handleResponse(response);
+  },
+
+  /**
+   * GET /match/day-results?date=&show=&divisionId=&teamId= (+ companyId)
+   */
+  getDayResults: async ({ date, show, divisionId, teamId } = {}) => {
+    const query = {};
+    if (date) query.date = date;
+    if (show) query.show = show;
+    if (divisionId && divisionId !== "All") query.divisionId = divisionId;
+    if (teamId && teamId !== "All") query.teamId = teamId;
+    return dedupedGet("/match/day-results", query);
+  },
+
+  /**
+   * GET /match/player-stats?matchId=&teamId= (+ companyId for Super Admin)
+   */
+  getPlayerStats: async ({ matchId, teamId }) => {
+    return dedupedGet("/match/player-stats", { matchId, teamId });
+  },
+
+  /**
+   * GET /match/results-entry-summary?dateFrom=&dateTo= (+ companyId for Super Admin)
+   */
+  getResultsEntrySummary: async ({ dateFrom, dateTo, division } = {}) => {
+    const query = {};
+    if (dateFrom) query.dateFrom = dateFrom;
+    if (dateTo) query.dateTo = dateTo;
+    if (division && division !== "All") query.division = division;
+    return dedupedGet("/match/results-entry-summary", query);
+  },
+
   /** GET /match/get-point-type-all?userId=&companyId= (companyId for Super Admin) */
   getAllPointTypes: async (userId) => {
     const response = await fetch(
@@ -1073,28 +1125,59 @@ export const matchAPI = {
     return handleResponse(response);
   },
 
-  /** POST /match/point-type-create — single create/update (pointId) */
+  /** POST /match/point-type-create — single create/update */
   createPointType: async (pointTypeData) => {
+    const isUpdate = Boolean(pointTypeData?.pointId);
+    const isSimpleCreate =
+      !isUpdate &&
+      pointTypeData?.isCheckbox == null &&
+      pointTypeData?.isHidden == null &&
+      pointTypeData?.isArchived == null &&
+      pointTypeData?.isCumulativeToPlayer == null;
+
+    const payload =
+      isUpdate || !isSimpleCreate
+        ? withCompanyId(pointTypeData)
+        : withCompanyId({
+            label: String(pointTypeData?.label || "").trim(),
+            category: pointTypeData?.category
+              ? String(pointTypeData.category).trim()
+              : null,
+            sequence: Number(pointTypeData?.sequence) || 1,
+          });
+
     const response = await fetch(`${API_BASE_URL}/match/point-type-create`, {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify(withCompanyId(pointTypeData)),
+      body: JSON.stringify(payload),
     });
     return handleResponse(response);
   },
 
   /**
    * POST /match/point-type-create — bulk create
-   * Body: { userId, pointTypes: [...], usePredefined?: boolean } (+ companyId for Super Admin)
+   * Body: { pointTypes: [{ label, category, sequence }, ...] } (+ companyId for Super Admin)
    */
-  createPointTypesBulk: async ({ userId, pointTypes, usePredefined = false }) => {
+  createPointTypesBulk: async ({
+    userId,
+    pointTypes,
+    usePredefined = false,
+  }) => {
+    const normalized = (Array.isArray(pointTypes) ? pointTypes : []).map(
+      (item, index) => ({
+        label: String(item?.label || "").trim(),
+        category: item?.category ? String(item.category).trim() : null,
+        sequence: Number(item?.sequence) || index + 1,
+      })
+    );
+
     const response = await fetch(`${API_BASE_URL}/match/point-type-create`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(
         withCompanyId({
-          userId,
-          pointTypes,
+          ...(userId ? { userId } : {}),
+          pointTypes: normalized,
           ...(usePredefined ? { usePredefined: true } : {}),
         })
       ),
@@ -1200,10 +1283,11 @@ export const seasonAPI = {
     return handleResponse(response);
   },
 
-  getAll: async () => {
+  getAll: async (options = {}) => {
+    const force = Boolean(options.force);
     const scopeKey = getActiveCompanyId() || "__default__";
 
-    if (seasonsGetAllInflight?.key === scopeKey) {
+    if (!force && seasonsGetAllInflight?.key === scopeKey) {
       return seasonsGetAllInflight.promise;
     }
 
@@ -1239,6 +1323,46 @@ export const seasonAPI = {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
+    return handleResponse(response);
+  },
+};
+
+export const standingsConfigAPI = {
+  get: async () => {
+    return dedupedGet("/standings-config");
+  },
+
+  save: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/standings-config/save`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(withCompanyId(payload)),
+    });
+    return handleResponse(response);
+  },
+
+  sortLayout: async (columnOrder) => {
+    const response = await fetch(
+      `${API_BASE_URL}/standings-config/layout/sort`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(withCompanyId({ columnOrder })),
+      }
+    );
+    return handleResponse(response);
+  },
+
+  deleteColumn: async (columnKey) => {
+    const key = encodeURIComponent(String(columnKey));
+    // Same path for all users; Super Admin gets ?companyId= via buildApiUrl
+    const response = await fetch(
+      buildApiUrl(`/standings-config/layout/columns/${key}`),
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(response);
   },
 };

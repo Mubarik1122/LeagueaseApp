@@ -88,17 +88,12 @@ function buildPointTypeUpdatePayload(userId, item, sequence) {
   };
 }
 
-function toBulkPointTypePayload(item, sequence) {
+/** POST /match/point-type-create body — matches API: label, category, sequence */
+function toCreatePointTypePayload(item, sequence) {
   return {
-    label: item.label,
-    category: item.category || null,
-    sequence,
-    isCumulativeToPlayer: item.isCumulativeToPlayer ?? true,
-    isLowestMostImportant: item.isLowestMostImportant ?? false,
-    isCumulativeToTeam: item.isCumulativeToTeam ?? true,
-    isCheckbox: item.isCheckbox ?? false,
-    isHidden: item.isHidden ?? false,
-    isArchived: item.isArchived ?? false,
+    label: String(item.label || "").trim(),
+    category: item.category ? String(item.category).trim() : null,
+    sequence: Number(sequence) || 1,
   };
 }
 
@@ -683,12 +678,23 @@ function IndividualStatTypesTab({
   };
 
   const showDeleteResult = (deleteResult) => {
-    const deleted = Number(deleteResult.totalDeleted) || 0;
-    const skipped = Number(deleteResult.totalSkipped) || 0;
+    const deleted =
+      Number(deleteResult.deletedCount) ||
+      Number(deleteResult.totalDeleted) ||
+      (Array.isArray(deleteResult.deleted) ? deleteResult.deleted.length : 0) ||
+      0;
+    const skipped =
+      Number(deleteResult.totalSkipped) ||
+      (Array.isArray(deleteResult.errors) ? deleteResult.errors.length : 0) ||
+      (Array.isArray(deleteResult.skipped) ? deleteResult.skipped.length : 0) ||
+      0;
 
     if (deleted === 0) {
       const reason =
-        deleteResult.skipped?.[0]?.reason || "Could not delete selected stat types.";
+        deleteResult.errors?.[0]?.reason ||
+        deleteResult.errors?.[0]?.message ||
+        deleteResult.skipped?.[0]?.reason ||
+        "Could not delete selected stat types.";
       throw new Error(reason);
     }
 
@@ -783,24 +789,15 @@ function IndividualStatTypesTab({
           isArchived: form.isArchived,
         });
       } else {
-        await matchAPI.createPointTypesBulk({
-          userId,
-          pointTypes: [
-            toBulkPointTypePayload(
-              {
-                label: form.label.trim(),
-                category: form.category.trim() || null,
-                isCumulativeToPlayer: form.isCumulativeToPlayer,
-                isLowestMostImportant: form.isLowestMostImportant,
-                isCumulativeToTeam: form.isCumulativeToTeam,
-                isCheckbox: form.isCheckbox,
-                isHidden: form.isHidden,
-                isArchived: form.isArchived,
-              },
-              Number(form.sequence) || nextSequence
-            ),
-          ],
-        });
+        await matchAPI.createPointType(
+          toCreatePointTypePayload(
+            {
+              label: form.label.trim(),
+              category: form.category.trim() || null,
+            },
+            Number(form.sequence) || nextSequence
+          )
+        );
       }
 
       Swal.fire({
@@ -969,11 +966,11 @@ function IndividualStatTypesTab({
         .map((label, index) => {
           const preset = predefinedTypes.find((item) => item.label === label);
           if (!preset) return null;
-          return toBulkPointTypePayload(preset, nextSequence + index);
+          return toCreatePointTypePayload(preset, nextSequence + index);
         })
         .filter(Boolean);
 
-      const response = await matchAPI.createPointTypesBulk({ userId, pointTypes });
+      const response = await matchAPI.createPointTypesBulk({ pointTypes });
       const result = response?.data || {};
       const created = Number(result.totalCreated) || 0;
       const skipped = Number(result.totalSkipped) || 0;

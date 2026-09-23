@@ -5,14 +5,4 @@ export const RESULTS_NAV_ITEMS = [
     path: "/dashboard/results",
     end: true,
   },
-  {
-    id: "standings",
-    label: "Standings Adjustments",
-    path: "/dashboard/results/standings",
-  },
-  {
-    id: "statistics",
-    label: "Statistics Download",
-    path: "/dashboard/results/statistics",
-  },
 ];
