@@ -13,6 +13,7 @@ const monthRange = getCurrentMonthRange();
 
 /** Defaults for GET /company/get-matches */
 export const DEFAULT_MATCH_FILTERS = {
+  season: "All",
   status: "All",
   division: "All",
   venue: "All",
@@ -30,6 +31,10 @@ export const MATCH_STATUS_OPTIONS = ["All", "Normal", "Scheduled", "Played"];
  */
 export function buildCompanyMatchQuery(filters = {}) {
   const query = {};
+
+  const season =
+    filters.season != null ? String(filters.season).trim() : "All";
+  if (season && season !== "All") query.season = season;
 
   const status = filters.status != null ? String(filters.status).trim() : "All";
   if (status && status !== "All") query.status = status;
@@ -61,6 +66,7 @@ export function buildCompanyMatchQuery(filters = {}) {
 
 export function hasActiveMatchFilters(filters = {}) {
   return (
+    filters.season !== DEFAULT_MATCH_FILTERS.season ||
     filters.status !== DEFAULT_MATCH_FILTERS.status ||
     filters.division !== DEFAULT_MATCH_FILTERS.division ||
     filters.venue !== DEFAULT_MATCH_FILTERS.venue ||

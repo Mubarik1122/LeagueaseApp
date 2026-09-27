@@ -476,12 +476,15 @@ export default function MaintainResults() {
   const { tournaments, fetchTournaments } = useTournament();
 
   const dateParam = searchParams.get("date") || "";
+  const showParam = searchParams.get("show") || "all_results";
+  const divisionParam = searchParams.get("divisionId") || "All";
+  const teamParam = searchParams.get("teamId") || "All";
   const userId = resolveUserId();
 
-  const [mode, setMode] = useState("all_results");
+  const [mode, setMode] = useState(showParam);
   const [selectedDate, setSelectedDate] = useState(dateParam);
-  const [competition, setCompetition] = useState("All");
-  const [teamFilter, setTeamFilter] = useState("All");
+  const [competition, setCompetition] = useState(divisionParam);
+  const [teamFilter, setTeamFilter] = useState(teamParam);
   const [drafts, setDrafts] = useState([]);
   const [teams, setTeams] = useState([]);
   const [pointTypes, setPointTypes] = useState([]);
@@ -491,9 +494,30 @@ export default function MaintainResults() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (dateParam) setSelectedDate(dateParam);
-  }, [dateParam]);
+    setSelectedDate(dateParam);
+    setMode(showParam || "all_results");
+    setCompetition(divisionParam || "All");
+    setTeamFilter(teamParam || "All");
+  }, [dateParam, showParam, divisionParam, teamParam]);
 
+  const syncFiltersToUrl = useCallback(
+    (next = {}) => {
+      const date = next.date ?? selectedDate;
+      const show = next.show ?? mode;
+      const divisionId = next.divisionId ?? competition;
+      const teamId = next.teamId ?? teamFilter;
+
+      const params = new URLSearchParams();
+      if (date) params.set("date", date);
+      if (show) params.set("show", show);
+      if (divisionId && divisionId !== "All") {
+        params.set("divisionId", divisionId);
+      }
+      if (teamId && teamId !== "All") params.set("teamId", teamId);
+      setSearchParams(params, { replace: true });
+    },
+    [selectedDate, mode, competition, teamFilter, setSearchParams]
+  );
   useEffect(() => {
     if (!userId) return;
     if (isSuperAdmin && (!companiesReady || !selectedCompanyId)) return;
@@ -603,7 +627,7 @@ export default function MaintainResults() {
 
   const applyDate = () => {
     if (!selectedDate) return;
-    setSearchParams({ date: selectedDate });
+    syncFiltersToUrl({ date: selectedDate });
   };
 
   const handleUpdate = async () => {
@@ -662,21 +686,36 @@ export default function MaintainResults() {
   };
 
   const openPlayerStats = (draft) => {
-    navigate(`/dashboard/results/match/${encodeURIComponent(draft.matchId)}`, {
-      state: {
-        match: {
-          matchId: draft.matchId,
-          dateTime: draft.dateTime,
-          homeTeam: draft.homeTeam,
-          awayTeam: draft.awayTeam,
-          homeTeamName: draft.homeTeamName,
-          awayTeamName: draft.awayTeamName,
-          homeScore: draft.homeScore,
-          awayScore: draft.awayScore,
-          status: draft.status,
+    const params = new URLSearchParams();
+    if (selectedDate) params.set("date", selectedDate);
+    if (mode) params.set("show", mode);
+    if (competition && competition !== "All") {
+      params.set("divisionId", competition);
+    }
+    if (teamFilter && teamFilter !== "All") {
+      params.set("teamId", teamFilter);
+    }
+    const returnTo = `/dashboard/results/maintain?${params.toString()}`;
+
+    navigate(
+      `/dashboard/results/match/${encodeURIComponent(draft.matchId)}?returnTo=${encodeURIComponent(returnTo)}`,
+      {
+        state: {
+          match: {
+            matchId: draft.matchId,
+            dateTime: draft.dateTime,
+            homeTeam: draft.homeTeam,
+            awayTeam: draft.awayTeam,
+            homeTeamName: draft.homeTeamName,
+            awayTeamName: draft.awayTeamName,
+            homeScore: draft.homeScore,
+            awayScore: draft.awayScore,
+            status: draft.status,
+          },
+          returnTo,
         },
-      },
-    });
+      }
+    );
   };
 
   return (
@@ -729,7 +768,11 @@ export default function MaintainResults() {
           <Field label="Show">
             <select
               value={mode}
-              onChange={(e) => setMode(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setMode(next);
+                syncFiltersToUrl({ show: next });
+              }}
               className={selectClass}
             >
               {MODE_OPTIONS.map((o) => (
@@ -742,7 +785,11 @@ export default function MaintainResults() {
           <Field label="Competition">
             <select
               value={competition}
-              onChange={(e) => setCompetition(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setCompetition(next);
+                syncFiltersToUrl({ divisionId: next });
+              }}
               className={selectClass}
             >
               <option value="All">All</option>
@@ -756,7 +803,11 @@ export default function MaintainResults() {
           <Field label="Team">
             <select
               value={teamFilter}
-              onChange={(e) => setTeamFilter(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setTeamFilter(next);
+                syncFiltersToUrl({ teamId: next });
+              }}
               className={selectClass}
             >
               <option value="All">All</option>

@@ -375,6 +375,22 @@ export default function MatchStatistics() {
     useCompanyContext();
 
   const matchFromNavRef = useRef(location.state?.match || null);
+  const returnToFromQuery = (() => {
+    try {
+      return new URLSearchParams(location.search).get("returnTo") || "";
+    } catch {
+      return "";
+    }
+  })();
+  const returnTo =
+    (typeof location.state?.returnTo === "string" && location.state.returnTo) ||
+    returnToFromQuery ||
+    "/dashboard/schedule";
+  const backLabel = returnTo.includes("/results/maintain")
+    ? "Maintain Results"
+    : returnTo.includes("/results")
+      ? "Results"
+      : "Schedule";
 
   const [match, setMatch] = useState(() => location.state?.match || null);
   const [activeSide, setActiveSide] = useState("home");
@@ -640,11 +656,11 @@ export default function MatchStatistics() {
           <div className="min-w-0">
             <button
               type="button"
-              onClick={() => navigate("/dashboard/schedule")}
+              onClick={() => navigate(returnTo)}
               className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00ADE5] hover:underline"
             >
               <ArrowLeft className="h-4 w-4" />
-              Schedule
+              {backLabel}
             </button>
             <div className="flex items-center gap-3">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#003366] to-[#004080] text-white shadow-sm">
@@ -686,10 +702,10 @@ export default function MatchStatistics() {
           <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-8 text-center">
             <p className="text-sm font-semibold text-red-700">{error}</p>
             <Link
-              to="/dashboard/schedule"
+              to={returnTo}
               className="mt-3 inline-block text-sm font-semibold text-[#003366] hover:underline"
             >
-              Back to schedule
+              Back to {backLabel.toLowerCase()}
             </Link>
           </div>
         ) : (

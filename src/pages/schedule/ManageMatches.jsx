@@ -4,6 +4,8 @@ import {
   Calendar,
   CalendarRange,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   Edit2,
   Filter,
@@ -27,6 +29,7 @@ import {
   teamAPI,
   venueAPI,
   matchAPI,
+  seasonAPI,
   formatMatchDateStatusLabel,
 } from "../../services/api";
 import {
@@ -35,6 +38,8 @@ import {
   hasActiveMatchFilters,
 } from "../../utils/companyMatchFilters";
 import { usePagePermission } from "../../hooks/usePagePermission";
+
+const PAGE_SIZE = 10;
 
 const selectClass =
   "w-full appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm font-medium text-gray-800 shadow-sm transition focus:border-[#00ADE5] focus:outline-none focus:ring-2 focus:ring-[#00ADE5]/20";
@@ -127,31 +132,77 @@ export default function ManageMatches() {
   const [divisions, setDivisions] = useState([]);
   const [teams, setTeams] = useState([]);
   const [venues, setVenues] = useState([]);
+  const [seasons, setSeasons] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingMatch, setEditingMatch] = useState(null);
   const [deletingMatchId, setDeletingMatchId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const divisionNameById = useMemo(
     () => Object.fromEntries(divisions.map((d) => [d.id, d.name])),
     [divisions]
   );
 
+  const totalPages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
+
+  const paginatedMatches = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return matches.slice(start, start + PAGE_SIZE);
+  }, [matches, currentPage]);
+
+  const pageNumbers = useMemo(() => {
+    const pages = [];
+    const windowSize = 5;
+    let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+    let end = Math.min(totalPages, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+    for (let p = start; p <= end; p += 1) pages.push(p);
+    return pages;
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [matches]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const toDateInputValue = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      const raw = String(value).slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : "";
+    }
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   const loadFilterOptions = async () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (!user.userId) return;
 
     try {
-      const [tournamentRes, teamsInDivRes, teamsUnassignedRes, venueRes] =
-        await Promise.all([
-          tournamentAPI.getByUserId(user.userId),
-          teamAPI.getByUserIdAndTournament(user.userId, "", {
-            filter: "other_division",
-          }),
-          teamAPI.getByUserIdAndTournament(user.userId, "", {
-            filter: "not_in_division",
-          }),
-          venueAPI.getDetails(user.userId),
-        ]);
+      const [
+        tournamentRes,
+        teamsInDivRes,
+        teamsUnassignedRes,
+        venueRes,
+        seasonRes,
+      ] = await Promise.all([
+        tournamentAPI.getByUserId(user.userId),
+        teamAPI.getByUserIdAndTournament(user.userId, "", {
+          filter: "other_division",
+        }),
+        teamAPI.getByUserIdAndTournament(user.userId, "", {
+          filter: "not_in_division",
+        }),
+        venueAPI.getDetails(user.userId),
+        seasonAPI.getAll().catch(() => null),
+      ]);
 
       const tournamentList = Array.isArray(tournamentRes.data)
         ? tournamentRes.data
@@ -168,6 +219,32 @@ export default function ManageMatches() {
             t.name ??
             "Unnamed",
         }))
+      );
+
+      const seasonPayload = seasonRes?.data;
+      const seasonList = Array.isArray(seasonPayload)
+        ? seasonPayload
+        : Array.isArray(seasonPayload?.seasons)
+          ? seasonPayload.seasons
+          : Array.isArray(seasonPayload?.items)
+            ? seasonPayload.items
+            : [];
+      setSeasons(
+        seasonList
+          .map((s) => ({
+            id: String(s._id ?? s.seasonId ?? s.id ?? ""),
+            name: s.seasonName ?? s.name ?? "Unnamed season",
+            startDate: toDateInputValue(
+              s.startDate || s.seasonStartDate || ""
+            ),
+            endDate: toDateInputValue(s.endDate || s.seasonEndDate || ""),
+            isDefault: Boolean(
+              s.isPrimary ?? s.isDefault ?? s.primary ?? false
+            ),
+            isCurrent: Boolean(s.isCurrent),
+          }))
+          .filter((s) => s.id)
+          .sort((a, b) => a.name.localeCompare(b.name))
       );
 
       const mergeTeams = (...responses) => {
@@ -210,6 +287,7 @@ export default function ManageMatches() {
       setDivisions([]);
       setTeams([]);
       setVenues([]);
+      setSeasons([]);
     }
   };
 
@@ -315,7 +393,8 @@ export default function ManageMatches() {
             <div>
               <h3 className="text-sm font-bold text-gray-900">Filter Matches</h3>
               <p className="text-xs text-gray-500">
-                Filter by date range, division, venue, home team and away team
+                Filter by season, date range, division, venue, home team and away
+                team
               </p>
             </div>
           </div>
@@ -323,6 +402,33 @@ export default function ManageMatches() {
 
         <div className="space-y-4 p-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <FilterField icon={Calendar} label="Season">
+              <select
+                value={filters.season}
+                onChange={(e) => {
+                  const nextSeason = e.target.value;
+                  const selected = seasons.find((s) => s.id === nextSeason);
+                  setFilters((prev) => ({
+                    ...prev,
+                    season: nextSeason,
+                    ...(selected?.startDate
+                      ? { dateFrom: selected.startDate }
+                      : {}),
+                    ...(selected?.endDate ? { dateTo: selected.endDate } : {}),
+                  }));
+                }}
+                className={selectClass}
+              >
+                <option value="All">All seasons</option>
+                {seasons.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                    {s.isDefault ? " (Default)" : s.isCurrent ? " (Current)" : ""}
+                  </option>
+                ))}
+              </select>
+            </FilterField>
+
             <FilterField icon={CalendarRange} label="Date from" showCaret={false}>
               <input
                 type="date"
@@ -454,6 +560,13 @@ export default function ManageMatches() {
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
               <span className="text-xs font-semibold text-gray-500">Active:</span>
+              {filters.season !== DEFAULT_MATCH_FILTERS.season && (
+                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                  Season:{" "}
+                  {seasons.find((s) => s.id === filters.season)?.name ||
+                    filters.season}
+                </span>
+              )}
               {filters.dateFrom && (
                 <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
                   From: {filters.dateFrom}
@@ -610,7 +723,7 @@ export default function ManageMatches() {
                   </td>
                 </tr>
               ) : (
-                matches.map((match) => (
+                paginatedMatches.map((match) => (
                   <tr
                     key={match.matchId}
                     className="transition-colors hover:bg-slate-50/80"
@@ -666,7 +779,16 @@ export default function ManageMatches() {
                               `/dashboard/results/match/${encodeURIComponent(
                                 matchId
                               )}`,
-                              { state: { match } }
+                              {
+                                state: {
+                                  match,
+                                  returnTo: `/dashboard/schedule${
+                                    searchParams.toString()
+                                      ? `?${searchParams.toString()}`
+                                      : ""
+                                  }`,
+                                },
+                              }
                             );
                           }}
                           title="Enter result"
@@ -711,6 +833,65 @@ export default function ManageMatches() {
             </tbody>
           </table>
         </div>
+
+        {!loading && matches.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-3.5">
+            <p className="text-xs text-gray-500">
+              Showing{" "}
+              <span className="font-semibold text-gray-700">
+                {(currentPage - 1) * PAGE_SIZE + 1}
+              </span>
+              –
+              <span className="font-semibold text-gray-700">
+                {Math.min(currentPage * PAGE_SIZE, matches.length)}
+              </span>{" "}
+              of{" "}
+              <span className="font-semibold text-gray-700">
+                {matches.length}
+              </span>
+            </p>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Prev
+              </button>
+
+              {pageNumbers.map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCurrentPage(page)}
+                  className={clsx(
+                    "min-w-[2rem] rounded-lg px-2 py-1.5 text-xs font-semibold transition",
+                    page === currentPage
+                      ? "bg-[#003366] text-white"
+                      : "border border-gray-200 bg-white text-gray-700 hover:bg-slate-50"
+                  )}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage >= totalPages}
+                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <CreateMatchModal
