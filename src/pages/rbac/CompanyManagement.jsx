@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Building2,
   Check,
+  ExternalLink,
   Hash,
   Laptop,
   Loader2,
@@ -30,6 +31,7 @@ import {
   rbacBtnSecondary,
   rbacSelect,
 } from "../../components/rbac/rbacTheme";
+import { normalizeWebsiteUrl } from "../../utils/websiteUrl";
 
 const QUICK_LINKS = [
   {
@@ -487,7 +489,23 @@ export default function CompanyManagement() {
                             </div>
                           </td>
                           <td className="px-4 py-3.5 text-gray-600">
-                            {company.domain || "—"}
+                            {company.domain ? (
+                              <a
+                                href={normalizeWebsiteUrl(company.domain)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 font-medium text-[#00ADE5] hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                                title={`Open ${company.domain}`}
+                              >
+                                <span className="max-w-[220px] truncate">
+                                  {company.domain}
+                                </span>
+                                <ExternalLink size={13} className="shrink-0 opacity-70" />
+                              </a>
+                            ) : (
+                              "—"
+                            )}
                           </td>
                           <td className="px-4 py-3.5">
                             <span className="font-mono text-xs text-gray-500" title={id}>

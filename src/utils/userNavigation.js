@@ -14,6 +14,11 @@ import {
   UserCog,
   Users,
 } from "lucide-react";
+import { isSuperAdminUser } from "./companySelection";
+import {
+  normalizeWebsiteUrl,
+  resolveUserCompanyDomain,
+} from "./websiteUrl";
 
 /** Map API pageKey → dashboard route (overrides pageSlug when needed). */
 const PAGE_KEY_ROUTES = {
@@ -23,7 +28,7 @@ const PAGE_KEY_ROUTES = {
   results: "/dashboard/results",
   users: "/dashboard/people",
   communications: "/dashboard/communication",
-  "visit-site": "https://leaguease-web.vercel.app/",
+  "visit-site": "",
   "access-control": "/dashboard/rbac/companies",
   "company-management": "/dashboard/rbac/companies",
   "role-management": "/dashboard/rbac/roles",
@@ -127,7 +132,7 @@ const FALLBACK_SIDEBAR = [
     id: "visit-site",
     pageKey: "visit-site",
     label: "Visit Site",
-    path: "https://leaguease-web.vercel.app/",
+    path: "",
     icon: Globe,
     external: true,
     end: false,
@@ -135,6 +140,20 @@ const FALLBACK_SIDEBAR = [
     children: [],
   },
 ];
+
+function resolveVisitSitePath(user) {
+  return normalizeWebsiteUrl(resolveUserCompanyDomain(user));
+}
+
+function withVisitSiteUrl(item, user) {
+  if (item?.pageKey !== "visit-site") return item;
+  const path = resolveVisitSitePath(user);
+  return {
+    ...item,
+    path,
+    external: true,
+  };
+}
 
 function sortByOrder(a, b) {
   return (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0);
@@ -204,9 +223,12 @@ function buildChildNavItem(child) {
 export function buildSidebarMenu(user) {
   const platform = getWebPlatform(user);
   const categories = Array.isArray(platform?.categories) ? [...platform.categories] : [];
+  const hideVisitSite = isSuperAdminUser(user);
 
   if (categories.length === 0) {
-    return FALLBACK_SIDEBAR;
+    return FALLBACK_SIDEBAR.filter(
+      (item) => !(hideVisitSite && item.pageKey === "visit-site")
+    ).map((item) => withVisitSiteUrl(item, user));
   }
 
   const canViewPage = (pageKey) => {
@@ -224,19 +246,26 @@ export function buildSidebarMenu(user) {
     .sort(sortByOrder)
     .map((cat) => {
       const pageKey = getPageKey(cat);
-      const path = pageKeyToRoute(pageKey, cat.pageSlug);
-      const external = /^https?:\/\//i.test(path) || pageKey === "visit-site";
+      if (hideVisitSite && pageKey === "visit-site") return null;
+
+      let path = pageKeyToRoute(pageKey, cat.pageSlug);
+      if (pageKey === "visit-site") {
+        path = resolveVisitSitePath(user);
+      }
+      const external =
+        /^https?:\/\//i.test(path) || pageKey === "visit-site";
 
       const children = (Array.isArray(cat.pages) ? [...cat.pages] : [])
         .filter((p) => getPlacement(p) === "side_navigation")
         .filter((p) => {
           const childKey = getPageKey(p);
+          if (hideVisitSite && childKey === "visit-site") return false;
           const view = canViewPage(childKey);
           // null = no explicit entry → show if listed in platform tree (backend already filtered)
           return view !== false;
         })
         .sort(sortByOrder)
-        .map(buildChildNavItem);
+        .map((child) => withVisitSiteUrl(buildChildNavItem(child), user));
 
       const selfView = canViewPage(pageKey);
       // Show parent when it has view, OR when it has visible children (e.g. Access Control

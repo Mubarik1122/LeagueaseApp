@@ -11,22 +11,81 @@ import {
   ChevronDown,
 } from "lucide-react";
 import clsx from "clsx";
+import Swal from "sweetalert2";
 import { useAuthContext } from "../context/AuthContext";
+import { companyAPI } from "../services/api";
 import { buildSidebarMenu } from "../utils/userNavigation";
+import { isSuperAdminUser } from "../utils/companySelection";
+import {
+  domainFromCompanyPayload,
+  normalizeWebsiteUrl,
+  resolveUserCompanyDomain,
+} from "../utils/websiteUrl";
 
 export default function Sidebar({ onMenuToggle }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [expandedKeys, setExpandedKeys] = useState({});
+  const [companyDomainUrl, setCompanyDomainUrl] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthContext();
+  const isSuperAdmin = isSuperAdminUser(user);
 
-  const menuItems = useMemo(
-    () => buildSidebarMenu(user),
+  useEffect(() => {
+    if (!user || isSuperAdmin) {
+      setCompanyDomainUrl("");
+      return;
+    }
+
+    const fromUser = normalizeWebsiteUrl(resolveUserCompanyDomain(user));
+    if (fromUser) {
+      setCompanyDomainUrl(fromUser);
+      return;
+    }
+
+    let cancelled = false;
+    companyAPI
+      .getMyContext()
+      .then((response) => {
+        if (cancelled) return;
+        const domain = domainFromCompanyPayload(response?.data);
+        const url = normalizeWebsiteUrl(domain);
+        setCompanyDomainUrl(url);
+        if (url && domain) {
+          try {
+            const stored = JSON.parse(localStorage.getItem("user") || "null");
+            if (stored && typeof stored === "object") {
+              localStorage.setItem(
+                "user",
+                JSON.stringify({ ...stored, domain })
+              );
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCompanyDomainUrl("");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, isSuperAdmin]);
+
+  const menuItems = useMemo(() => {
+    const items = buildSidebarMenu(user);
+    if (!companyDomainUrl) return items;
+    return items.map((item) => {
+      if (item.pageKey !== "visit-site") return item;
+      return { ...item, path: companyDomainUrl, external: true };
+    });
+  },
     // accessRevision bumps on every /access/my-access merge so menu always rebuilds
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, user?.accessRevision, user?.pageKeyMap, user?.platforms]
+    [user, user?.accessRevision, user?.pageKeyMap, user?.platforms, companyDomainUrl]
   );
 
   // Auto-expand newly granted sections (e.g. Access Control after permission refresh)
@@ -101,12 +160,29 @@ export default function Sidebar({ onMenuToggle }) {
     const Icon = item.icon;
 
     if (item.external) {
+      const handleExternalClick = (event) => {
+        if (item.pageKey !== "visit-site") return;
+        const href = String(item.path || "").trim();
+        if (/^https?:\/\//i.test(href)) return;
+
+        event.preventDefault();
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "info",
+          title: "No website domain configured",
+          timer: 2200,
+          showConfirmButton: false,
+        });
+      };
+
       return (
         <a
           key={item.id || item.path}
-          href={item.path}
+          href={item.path || "#"}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={handleExternalClick}
           className={clsx(
             "group flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-gray-700 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#00ADE5]/10 hover:to-[#00d4ff]/10 hover:text-[#00ADE5]",
             indent && "py-2 text-[13px]"
