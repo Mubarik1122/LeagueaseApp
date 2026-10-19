@@ -81,6 +81,31 @@ body {
   animation: blob 7s infinite;
 }
 
+@keyframes assistant-basketball-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  35% {
+    transform: translateY(-14px) scale(1, 1.04);
+  }
+  50% {
+    transform: translateY(0) scale(1.08, 0.9);
+  }
+  65% {
+    transform: translateY(-7px) scale(1, 1.02);
+  }
+  80% {
+    transform: translateY(0) scale(1.04, 0.96);
+  }
+}
+
+.animate-assistant-basketball {
+  animation: assistant-basketball-bounce 1.15s cubic-bezier(0.28, 0.84, 0.42, 1)
+    infinite;
+  transform-origin: center bottom;
+}
+
 .animation-delay-2000 {
   animation-delay: 2s;
 }

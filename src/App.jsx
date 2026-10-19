@@ -50,6 +50,7 @@ import Teams from "./pages/Teams";
 import Standings from "./pages/Standings";
 import VenueManagement from "./pages/VenueManagement";
 import { useAuthContext } from "./context/AuthContext";
+import AssistantChat from "./components/AssistantChat";
 
 function App() {
   const { isAuthenticated, loading } = useAuthContext();
@@ -150,6 +151,7 @@ function App() {
                     <Route path="help" element={<Help />} />
                   </Routes>
                 </main>
+                <AssistantChat />
               </div>
             ) : (
               <Navigate to="/login" replace />

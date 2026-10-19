@@ -1,4 +1,7 @@
-import { getActiveCompanyId } from "../utils/companySelection";
+import {
+  clearStoredCompanyId,
+  getActiveCompanyId,
+} from "../utils/companySelection";
 import { buildCompanyUserQuery } from "../utils/companyUserFilters";
 import { buildCompanyMatchQuery } from "../utils/companyMatchFilters";
 
@@ -6,6 +9,54 @@ import { buildCompanyMatchQuery } from "../utils/companyMatchFilters";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "https://leagueaseappbackend-production.up.railway.app/api";
+
+const PUBLIC_AUTH_PATH =
+  /\/auth\/(login|signup|request-otp|verify-otp|forgot-password|create-league|verify-username)(?:\?|$)/i;
+
+let sessionEnding = false;
+
+function isPublicAuthResponse(response) {
+  const url = String(response?.url || "");
+  return PUBLIC_AUTH_PATH.test(url);
+}
+
+function isUnauthorizedPayload(response, data) {
+  if (Number(response?.status) === 401) return true;
+
+  const message = String(data?.errorMessage || data?.message || "")
+    .trim()
+    .toLowerCase();
+  if (!message) return false;
+
+  return (
+    message === "unauthorized" ||
+    message === "invalid token" ||
+    message.includes("jwt expired") ||
+    message.includes("token expired") ||
+    message.includes("session expired")
+  );
+}
+
+/** Clear local session and send user to login when the API says auth is dead. */
+function endSessionDueToUnauthorized() {
+  if (sessionEnding) return;
+  sessionEnding = true;
+
+  clearStoredCompanyId();
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("rememberMe");
+  localStorage.removeItem("rememberUntil");
+  localStorage.removeItem("Username");
+  localStorage.removeItem("Key");
+
+  const path = window.location?.pathname || "";
+  if (!path.startsWith("/login")) {
+    window.location.assign("/login");
+    return;
+  }
+  sessionEnding = false;
+}
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
@@ -107,6 +158,17 @@ async function dedupedGetPath(path) {
 // Helper function to handle API responses
 const handleResponse = async (response) => {
   const data = await response.json().catch(() => ({}));
+
+  if (
+    isUnauthorizedPayload(response, data) &&
+    !isPublicAuthResponse(response)
+  ) {
+    endSessionDueToUnauthorized();
+    throw new Error(
+      data.errorMessage || "Session expired. Please sign in again."
+    );
+  }
+
   if (!response.ok) {
     throw new Error(
       data.errorMessage || `HTTP error! status: ${response.status}`
@@ -1322,6 +1384,22 @@ export const seasonAPI = {
     const response = await fetch(`${API_BASE_URL}/season/${seasonId}`, {
       method: "DELETE",
       headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+};
+
+export const assistantAPI = {
+  chat: async ({ message, conversationId, history, companyId } = {}) => {
+    const response = await fetch(`${API_BASE_URL}/assistant/chat`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        message,
+        ...(conversationId ? { conversationId } : {}),
+        ...(Array.isArray(history) && history.length ? { history } : {}),
+        ...(companyId ? { companyId } : {}),
+      }),
     });
     return handleResponse(response);
   },
