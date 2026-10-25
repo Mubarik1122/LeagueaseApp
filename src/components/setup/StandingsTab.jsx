@@ -511,7 +511,7 @@ export default function StandingsTab() {
           <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm">
             <div className="border-b border-gray-100 px-5 py-3.5">
               <h3 className="text-sm font-bold text-[#003366]">Columns</h3>
-              <p className="mt-0.5 text-xs text-gray-500">
+          <p className="mt-0.5 text-xs text-gray-500">
                 Edit header labels, reorder columns, or show some only on
                 detailed view
               </p>
@@ -647,7 +647,7 @@ export default function StandingsTab() {
                 </tbody>
               </table>
             </div>
-          </div>
+        </div>
 
           <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm">
             <div className="border-b border-gray-100 px-5 py-3.5">
@@ -723,7 +723,7 @@ export default function StandingsTab() {
                 <div key={`rank-${index}`} className="flex items-center gap-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#003366] text-xs font-bold text-white">
                     {index + 1}
-                  </span>
+                </span>
                   <RankSelect
                     value={value}
                     disabled={!canEdit}
@@ -812,8 +812,8 @@ export default function StandingsTab() {
                     }
                     className="w-full rounded-lg border border-gray-200 px-2 py-2 text-center text-sm font-semibold text-[#003366] focus:border-[#00ADE5] focus:outline-none focus:ring-2 focus:ring-[#00ADE5]/20"
                   />
-                </div>
-              ))}
+              </div>
+            ))}
             </div>
           </div>
 
