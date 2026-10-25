@@ -37,7 +37,7 @@ const COMPANY_QUESTION_RE =
   /which company|what company|company (is this|should|for)|select (a )?company/i;
 
 const WELCOME =
-  "Hello! I'm the Leaguease assistant. I can help with access control, scheduling, setup, and lookups.\n\nTap Actions, type @, or use the mic to speak.";
+  "Welcome to Leaguease Assistant. I can help you manage users and roles, schedule matches, set up teams and venues, and look up league information.\n\nUse Actions, type @, or speak with the microphone to get started.";
 
 const ACTION_CATEGORIES = [
   {
@@ -299,6 +299,10 @@ export default function AssistantChat() {
   const conversationIdRef = useRef(conversationId);
   const recognitionRef = useRef(null);
   const speakRepliesRef = useRef(speakReplies);
+  const voiceSessionRef = useRef(false);
+  const openRef = useRef(open);
+  const startListeningRef = useRef(null);
+  const resumeListenTimerRef = useRef(null);
 
   const selectedCompanyName =
     selectedCompany?.companyName || selectedCompany?.name || "";
@@ -334,6 +338,10 @@ export default function AssistantChat() {
   }, [speakReplies]);
 
   useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
     setMentionIndex(0);
   }, [mentionQuery, sheetOpen]);
 
@@ -345,6 +353,11 @@ export default function AssistantChat() {
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 50);
     if (!open) {
+      if (resumeListenTimerRef.current) {
+        clearTimeout(resumeListenTimerRef.current);
+        resumeListenTimerRef.current = null;
+      }
+      voiceSessionRef.current = false;
       try {
         recognitionRef.current?.stop?.();
       } catch {
@@ -363,6 +376,9 @@ export default function AssistantChat() {
 
   useEffect(
     () => () => {
+      if (resumeListenTimerRef.current) {
+        clearTimeout(resumeListenTimerRef.current);
+      }
       try {
         recognitionRef.current?.stop?.();
       } catch {
@@ -396,10 +412,35 @@ export default function AssistantChat() {
     openSheet(mention.query);
   };
 
+  const clearResumeListenTimer = () => {
+    if (resumeListenTimerRef.current) {
+      clearTimeout(resumeListenTimerRef.current);
+      resumeListenTimerRef.current = null;
+    }
+  };
+
+  const scheduleResumeListening = () => {
+    clearResumeListenTimer();
+    if (!voiceSessionRef.current || !openRef.current || !voiceSupported) return;
+    resumeListenTimerRef.current = setTimeout(() => {
+      resumeListenTimerRef.current = null;
+      if (
+        !voiceSessionRef.current ||
+        !openRef.current ||
+        sendingRef.current ||
+        recognitionRef.current
+      ) {
+        return;
+      }
+      startListeningRef.current?.({ auto: true });
+    }, 350);
+  };
+
   const sendMessage = async (raw) => {
     const text = String(raw || "").trim();
     if (!text || sendingRef.current) return;
 
+    clearResumeListenTimer();
     stopSpeaking();
     setSheetOpen(false);
     setMentionQuery("");
@@ -450,10 +491,6 @@ export default function AssistantChat() {
         },
       ]);
 
-      if (speakRepliesRef.current) {
-        speakText(reply);
-      }
-
       const companyAnswer = selectedCompanyName || selectedCompanyId;
       if (
         isSuperAdmin &&
@@ -473,6 +510,10 @@ export default function AssistantChat() {
       ) {
         autoCompanySentRef.current = false;
       }
+
+      if (speakRepliesRef.current && !autoCompanyAnswer) {
+        await speakText(reply);
+      }
     } catch (err) {
       setStatus("error");
       setPendingActionType(null);
@@ -489,11 +530,16 @@ export default function AssistantChat() {
           content: friendly,
         },
       ]);
+      if (speakRepliesRef.current && voiceSessionRef.current) {
+        await speakText(friendly);
+      }
     } finally {
       sendingRef.current = false;
       setSending(false);
       if (autoCompanyAnswer) {
         setTimeout(() => sendMessageRef.current?.(autoCompanyAnswer), 0);
+      } else if (voiceSessionRef.current) {
+        scheduleResumeListening();
       }
     }
   };
@@ -510,17 +556,22 @@ export default function AssistantChat() {
     setListening(false);
   };
 
-  const startListening = () => {
+  const startListening = ({ auto = false } = {}) => {
     if (!voiceSupported || sendingRef.current) return;
+    if (listening && auto) return;
 
+    clearResumeListenTimer();
     stopSpeaking();
     setSheetOpen(false);
     setVoiceHint("");
 
-    if (listening) {
+    if (listening && !auto) {
+      voiceSessionRef.current = false;
       stopListening();
       return;
     }
+
+    voiceSessionRef.current = true;
 
     const recognition = createSpeechRecognizer({
       lang: "en-US",
@@ -537,12 +588,14 @@ export default function AssistantChat() {
         setListening(false);
         recognitionRef.current = null;
         setVoiceHint(message);
+        if (auto) voiceSessionRef.current = false;
       },
       onResult: (transcript, meta) => {
         if (!transcript) return;
         setInput(transcript);
         if (meta?.isFinal) {
           setVoiceHint("");
+          voiceSessionRef.current = true;
           stopListening();
           sendMessageRef.current?.(transcript);
         } else {
@@ -553,6 +606,7 @@ export default function AssistantChat() {
 
     if (!recognition) {
       setVoiceHint("Speech recognition is not supported in this browser.");
+      if (auto) voiceSessionRef.current = false;
       return;
     }
 
@@ -563,11 +617,16 @@ export default function AssistantChat() {
       setVoiceHint("Could not start the microphone. Try again.");
       setListening(false);
       recognitionRef.current = null;
+      if (auto) voiceSessionRef.current = false;
     }
   };
 
+  startListeningRef.current = startListening;
+
   const selectAction = (action) => {
     if (!action) return;
+    voiceSessionRef.current = false;
+    clearResumeListenTimer();
     setSheetOpen(false);
     setMentionQuery("");
     setInput("");
@@ -581,6 +640,8 @@ export default function AssistantChat() {
       selectAction(sheetActions[mentionIndex]);
       return;
     }
+    voiceSessionRef.current = false;
+    clearResumeListenTimer();
     sendMessage(input);
   };
 
@@ -620,11 +681,32 @@ export default function AssistantChat() {
     ? ACTION_LABELS[pendingActionType] || pendingActionType
     : "League operations assistant";
 
+  const isNewChat =
+    !conversationId &&
+    messages.length === 1 &&
+    messages[0]?.id === "welcome";
+
+  const toggleOpen = () => {
+    setOpen((wasOpen) => {
+      const nextOpen = !wasOpen;
+      if (
+        nextOpen &&
+        ttsSupported &&
+        speakRepliesRef.current &&
+        isNewChat
+      ) {
+        // Must run in the click handler so the browser allows speech.
+        speakText(WELCOME);
+      }
+      return nextOpen;
+    });
+  };
+
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         className={clsx(
           "fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition hover:scale-105",
           open

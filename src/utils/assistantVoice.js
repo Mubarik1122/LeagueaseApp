@@ -23,16 +23,38 @@ export function stopSpeaking() {
 }
 
 export function speakText(text, { lang = "en-US", rate = 1 } = {}) {
-  if (!isSpeechSynthesisSupported()) return false;
-  const content = String(text || "").trim();
-  if (!content) return false;
+  if (!isSpeechSynthesisSupported()) return Promise.resolve(false);
+  const content = String(text || "")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!content) return Promise.resolve(false);
 
   stopSpeaking();
-  const utterance = new SpeechSynthesisUtterance(content);
-  utterance.lang = lang;
-  utterance.rate = rate;
-  window.speechSynthesis.speak(utterance);
-  return true;
+  try {
+    window.speechSynthesis.resume();
+  } catch {
+    /* ignore */
+  }
+
+  return new Promise((resolve) => {
+    const utterance = new SpeechSynthesisUtterance(content);
+    utterance.lang = lang;
+    utterance.rate = rate;
+    let settled = false;
+    const finish = (ok) => {
+      if (settled) return;
+      settled = true;
+      resolve(ok);
+    };
+    utterance.onend = () => finish(true);
+    utterance.onerror = () => finish(false);
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      finish(false);
+    }
+  });
 }
 
 /**
